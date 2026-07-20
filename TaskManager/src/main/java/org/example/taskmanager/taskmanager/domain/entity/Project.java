@@ -55,8 +55,7 @@ public class Project {
     boards.add(board);
   }
 
-  public void addBoardInPlace(Board board, int index) {
-    // TODO: проверка на индекс
-    boards.add(index, board);
+  public Board removeBoard(int index) {
+    return boards.remove(index);
   }
 }

@@ -3,6 +3,7 @@ package org.example.taskmanager.taskmanager.domain.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -64,10 +65,11 @@ public class Task {
   @Column
   private List<Comment> comments;
 
-  // TODO: history: List<AuditEntry>
+  @Column
+  private List<AuditEntity> auditEntities;
 
-  public Task(UUID boardId, UUID columnId, String name, String description, TaskStatus status, TaskPriority priority,
-              UUID assigneeId, UUID creatorId, Instant deadline) {
+  public Task(@NotNull UUID boardId, UUID columnId, @NotNull String name, String description, TaskStatus status,
+              TaskPriority priority, UUID assigneeId, @NotNull  UUID creatorId, Instant deadline) {
     id = UUID.randomUUID();
     this.boardId = boardId;
     this.columnId = columnId;
@@ -78,10 +80,44 @@ public class Task {
     this.assigneeId = assigneeId;
     this.creatorId = creatorId;
     this.deadline = deadline;
+
     createdAt = Instant.now();
     updatedAt = null;
     subtasks = new ArrayList<>();
     tags = new ArrayList<>();
     comments = new ArrayList<>();
+    auditEntities = new ArrayList<>();
+  }
+
+  public void addSubtask(Task subtask) {
+    subtasks.add(subtask);
+  }
+
+  public void addTag(Tag tag) {
+    tags.add(tag);
+  }
+
+  public void addComment(Comment comment) {
+    comments.add(comment);
+  }
+
+  public void addAuditEntity(AuditEntity auditEntity) {
+    auditEntities.add(auditEntity);
+  }
+
+  public Task removeSubtask(int index) {
+    return subtasks.remove(index);
+  }
+
+  public Tag removeTag(int index) {
+    return tags.remove(index);
+  }
+
+  public Comment removeComment(int index) {
+    return comments.remove(index);
+  }
+
+  public AuditEntity removeAuditEntity(int index) {
+    return auditEntities.remove(index);
   }
 }

@@ -38,7 +38,7 @@ public class Comment {
     this.taskId = taskId;
     this.authorId = authorId;
     this.content = content;
-    this.cratedAt = cratedAt;
+    this.cratedAt = Instant.now();
     updatedAt = null;
   }
 }

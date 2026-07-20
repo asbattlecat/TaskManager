@@ -63,8 +63,7 @@ public class Board {
     tasks.add(task);
   }
 
-  public void addTaskInPlace(Task task, int index) {
-    // TODO: проверка индекса
-    tasks.add(index, task);
+  public Task removeTask(int index) {
+    return tasks.remove(index);
   }
 }
