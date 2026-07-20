@@ -28,6 +28,7 @@ public class BoardColumn {
 
   public BoardColumn(UUID boardId, String name, Integer position) {
     id = UUID.randomUUID();
+
     this.boardId = boardId;
     this.name = name;
     this.position = position;

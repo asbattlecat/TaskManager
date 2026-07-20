@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,6 +35,14 @@ public class Workspace {
   @Column
   private Instant updatedAt;
 
-  @Column
-  private List<Project> projects;
+
+  public Workspace(String name, String description, UUID ownerId) {
+    id =  UUID.randomUUID();
+
+    this.name = name;
+    this.description = description;
+    this.ownerId = ownerId;
+
+    this.createdAt = Instant.now();
+  }
 }

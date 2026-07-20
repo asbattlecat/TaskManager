@@ -32,9 +32,11 @@ public class WorkspaceMember {
 
   public WorkspaceMember(UUID workspaceId, UUID userId, WorkspaceRole role) {
     id = UUID.randomUUID();
+
     this.workspaceId = workspaceId;
     this.userId = userId;
     this.role = role;
+
     this.joinedAt = Instant.now();
   }
 }

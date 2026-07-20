@@ -38,24 +38,14 @@ public class Project {
   @Column(nullable = false)
   private boolean archived;
 
-  @Column
-  private List<Board> boards;
-
   public Project(UUID workspaceId, String name, String description, Instant createdAt) {
     id = UUID.randomUUID();
+
     this.workspaceId = workspaceId;
     this.name = name;
     this.description = description;
     this.createdAt = createdAt;
+
     archived = false;
-    boards = new ArrayList<>();
-  }
-
-  public void addBoard(Board board) {
-    boards.add(board);
-  }
-
-  public Board removeBoard(int index) {
-    return boards.remove(index);
   }
 }

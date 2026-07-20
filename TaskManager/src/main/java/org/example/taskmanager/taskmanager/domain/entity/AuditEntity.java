@@ -16,34 +16,34 @@ import java.util.UUID;
 @Entity
 public class AuditEntity {
   @Id
-  private UUID id; //
+  private UUID id;
 
   @Column
-  private UUID taskId; //
+  private UUID taskId;
 
   @Column(nullable = false)
-  private UUID userId; //
+  private UUID userId;
 
   @Column(nullable = false)
-  private Instant timestamp; //
+  private Instant timestamp;
 
   @Column(nullable = false)
-  private String fieldName; //
+  private String fieldName;
 
   @Column(nullable = false)
-  private String oldValue; //
+  private String oldValue;
 
   @Column(nullable = false)
-  private String newValue; //
+  private String newValue;
 
   @Column(nullable = false)
-  private UUID workspaceId; //
+  private UUID workspaceId;
 
   @Column
-  private UUID projectId; //
+  private UUID projectId;
 
   @Column
-  private UUID boardId; //
+  private UUID boardId;
 
   public AuditEntity(UUID taskId, UUID userId, String fieldName, String oldValue, String newValue,
                      UUID workspaceId, UUID projectId, UUID boardId) {

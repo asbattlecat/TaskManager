@@ -1,8 +1,6 @@
 package org.example.taskmanager.taskmanager.domain.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,9 +24,10 @@ public class Task {
   @Column(nullable = false)
   private UUID boardId;
 
-  // для kanban
+  // --------- для kanban ----------
   @Column
   private UUID columnId;
+  // --------- для kanban ----------
 
   @Column(nullable = false)
   private String name;
@@ -37,9 +36,11 @@ public class Task {
   private String description;
 
   @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
   private TaskStatus status;
 
   @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
   private TaskPriority priority;
 
   @Column
@@ -57,6 +58,7 @@ public class Task {
   @Column
   private Instant updatedAt;
 
+  @Column
   private List<Task> subtasks;
 
   @Column

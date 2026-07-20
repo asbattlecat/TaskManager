@@ -36,34 +36,13 @@ public class Board {
   @Column
   private Instant updatedAt;
 
-  @Column
-  private List<Task> tasks;
-
-  // для kanban
-  @Column
-  private List<BoardColumn> columns;
-
   public Board(UUID projectId, String name, BoardType type) {
     id = UUID.randomUUID();
+
     this.projectId = projectId;
     this.name = name;
     this.type = type;
+
     createdAt = Instant.now();
-    updatedAt = null;
-    if (type == BoardType.KANBAN) {
-      columns = new ArrayList<>();
-      tasks = null;
-    } else {
-      columns = null;
-      tasks = new ArrayList<>();
-    }
-  }
-
-  public void addTask(Task task) {
-    tasks.add(task);
-  }
-
-  public Task removeTask(int index) {
-    return tasks.remove(index);
   }
 }
