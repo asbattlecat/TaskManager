@@ -18,6 +18,16 @@
 
 ## 2.1. Агрегаты и их границы
 
+### IdentityAggregate
+Корень: User
+Внутренние сущности: нет
+Внешние связи: UserId используется всеми другими агрегатами
+Инварианты:
+- email уникален
+- пользователь может быть активным/деактивированным
+- пользователь не может быть удалён, если он является OWNER workspace
+- User может быть участником нескольких workspace
+
 ### WorkspaceAggregate
 Корень: Workspace  
 Внутренние сущности: WorkspaceMember  
@@ -26,6 +36,8 @@
 - Workspace имеет OWNER
 - WorkspaceMember уникален по userId
 - OWNER не может быть удалён без передачи роли
+- WorkspaceMember создаётся только для существующего User
+- WorkspaceMember удаляется при деактивации User
 
 ### ProjectAggregate
 Корень: Project  
@@ -119,6 +131,11 @@ IN_PROGRESS → BLOCKED → IN_PROGRESS
 ---
 
 # 6. Требования к API
+
+### User API
+- регистрация пользователя
+- получение профиля
+- деактивация пользователя
 
 ### Workspace API
 - создание workspace
