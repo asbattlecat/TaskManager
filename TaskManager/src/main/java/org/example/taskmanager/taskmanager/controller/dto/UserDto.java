@@ -1,4 +1,6 @@
 package org.example.taskmanager.taskmanager.controller.dto;
 
-public record UserDto(String name, String email, boolean active) {
+import java.util.UUID;
+
+public record UserDto(UUID id, String name, String email, boolean active) {
 }
