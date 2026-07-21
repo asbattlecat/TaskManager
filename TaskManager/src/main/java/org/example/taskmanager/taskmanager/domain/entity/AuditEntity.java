@@ -3,6 +3,7 @@ package org.example.taskmanager.taskmanager.domain.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -12,49 +13,39 @@ import java.util.UUID;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @Entity
 public class AuditEntity {
   @Id
-  private UUID id;
-
-  @Column
-  private UUID taskId;
+  private final UUID id;
 
   @Column(nullable = false)
-  private UUID userId;
+  private final UUID taskId;
 
   @Column(nullable = false)
-  private Instant timestamp;
+  private final UUID userId;
 
   @Column(nullable = false)
-  private String fieldName;
+  private final String fieldName;
 
   @Column(nullable = false)
-  private String oldValue;
+  private final String oldValue;
 
   @Column(nullable = false)
-  private String newValue;
+  private final String newValue;
 
   @Column(nullable = false)
-  private UUID workspaceId;
+  private final Instant timestamp;
 
-  @Column
-  private UUID projectId;
+  public AuditEntity(@NotNull UUID taskId, @NotNull UUID userId, @NotNull String fieldName, @NotNull String oldValue,
+                     @NotNull String newValue) {
+    id = UUID.randomUUID();
 
-  @Column
-  private UUID boardId;
-
-  public AuditEntity(UUID taskId, UUID userId, String fieldName, String oldValue, String newValue,
-                     UUID workspaceId, UUID projectId, UUID boardId) {
     this.taskId = taskId;
     this.userId = userId;
-    this.timestamp = Instant.now();
     this.fieldName = fieldName;
     this.oldValue = oldValue;
     this.newValue = newValue;
-    this.workspaceId = workspaceId;
-    this.projectId = projectId;
-    this.boardId = boardId;
+
+    this.timestamp = Instant.now();
   }
 }

@@ -17,7 +17,7 @@ public class Tag {
   private UUID id;
 
   @Column(nullable = false)
-  private UUID workspaceId;
+  private UUID taskId;
 
   @Column(nullable = false)
   private String name;
@@ -26,9 +26,10 @@ public class Tag {
   @Enumerated(EnumType.STRING)
   private TagColor color;
 
-  public Tag(UUID workspaceId, String name, TagColor color) {
+  public Tag(UUID taskId, String name, TagColor color) {
     id = UUID.randomUUID();
-    this.workspaceId = workspaceId;
+
+    this.taskId = taskId;
     this.name = name;
     this.color = color;
   }

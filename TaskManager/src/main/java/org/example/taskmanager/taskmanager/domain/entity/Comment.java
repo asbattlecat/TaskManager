@@ -3,6 +3,7 @@ package org.example.taskmanager.taskmanager.domain.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -33,12 +34,13 @@ public class Comment {
   @Column
   private Instant updatedAt;
 
-  public Comment(UUID taskId, UUID authorId, String content, Instant cratedAt) {
+  public Comment(@NotNull UUID taskId, @NotNull UUID authorId, @NotNull String content) {
     id = UUID.randomUUID();
+
     this.taskId = taskId;
     this.authorId = authorId;
     this.content = content;
+
     this.cratedAt = Instant.now();
-    updatedAt = null;
   }
 }

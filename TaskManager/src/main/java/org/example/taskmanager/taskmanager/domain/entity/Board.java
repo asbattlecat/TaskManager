@@ -3,6 +3,7 @@ package org.example.taskmanager.taskmanager.domain.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -36,7 +37,7 @@ public class Board {
   @Column
   private Instant updatedAt;
 
-  public Board(UUID projectId, String name, BoardType type) {
+  public Board(@NotNull UUID projectId, @NotNull String name, @NotNull BoardType type) {
     id = UUID.randomUUID();
 
     this.projectId = projectId;

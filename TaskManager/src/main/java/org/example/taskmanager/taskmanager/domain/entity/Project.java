@@ -3,6 +3,7 @@ package org.example.taskmanager.taskmanager.domain.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -38,14 +39,14 @@ public class Project {
   @Column(nullable = false)
   private boolean archived;
 
-  public Project(UUID workspaceId, String name, String description, Instant createdAt) {
+  public Project(@NotNull UUID workspaceId, @NotNull String name, String description) {
     id = UUID.randomUUID();
 
     this.workspaceId = workspaceId;
     this.name = name;
     this.description = description;
-    this.createdAt = createdAt;
 
+    this.createdAt = Instant.now();
     archived = false;
   }
 }

@@ -3,6 +3,7 @@ package org.example.taskmanager.taskmanager.domain.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -26,7 +27,7 @@ public class BoardColumn {
   @Column(nullable = false)
   private Integer position;
 
-  public BoardColumn(UUID boardId, String name, Integer position) {
+  public BoardColumn(@NotNull UUID boardId, @NotNull String name, @NotNull Integer position) {
     id = UUID.randomUUID();
 
     this.boardId = boardId;

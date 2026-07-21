@@ -3,6 +3,7 @@ package org.example.taskmanager.taskmanager.domain.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -36,7 +37,7 @@ public class Workspace {
   private Instant updatedAt;
 
 
-  public Workspace(String name, String description, UUID ownerId) {
+  public Workspace(@NotNull String name, String description, @NotNull UUID ownerId) {
     id =  UUID.randomUUID();
 
     this.name = name;

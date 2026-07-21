@@ -1,6 +1,7 @@
 package org.example.taskmanager.taskmanager.domain.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -30,7 +31,7 @@ public class WorkspaceMember {
   @Column(nullable = false)
   private Instant joinedAt;
 
-  public WorkspaceMember(UUID workspaceId, UUID userId, WorkspaceRole role) {
+  public WorkspaceMember(@NotNull UUID workspaceId, @NotNull UUID userId, @NotNull WorkspaceRole role) {
     id = UUID.randomUUID();
 
     this.workspaceId = workspaceId;
