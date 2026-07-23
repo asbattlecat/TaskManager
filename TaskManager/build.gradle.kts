@@ -19,11 +19,14 @@ repositories {
 }
 
 dependencies {
+    val mapstructVersion = "1.5.5.Final"
+
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.hibernate.orm:hibernate-core:7.4.4.Final")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.mapstruct:mapstruct:$mapstructVersion")
 
     compileOnly("org.projectlombok:lombok")
 
@@ -34,6 +37,7 @@ dependencies {
 
     annotationProcessor("org.projectlombok:lombok")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+    annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
 
     testImplementation("org.springframework.boot:spring-boot-starter-security-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
