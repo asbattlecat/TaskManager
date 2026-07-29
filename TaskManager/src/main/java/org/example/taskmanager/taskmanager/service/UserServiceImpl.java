@@ -1,7 +1,8 @@
 package org.example.taskmanager.taskmanager.service;
 
-import org.example.taskmanager.taskmanager.controller.dto.CreateUserRequestDto;
-import org.example.taskmanager.taskmanager.controller.dto.UpdateUserPasswordRequestDto;
+import jakarta.validation.constraints.NotNull;
+import org.example.taskmanager.taskmanager.controller.dto.CreateUserRequest;
+import org.example.taskmanager.taskmanager.controller.dto.UpdateUserPasswordRequest;
 import org.example.taskmanager.taskmanager.controller.dto.UserDto;
 import org.example.taskmanager.taskmanager.domain.entity.User;
 import org.example.taskmanager.taskmanager.infrastructure.exceptions.AlreadyExistsException;
@@ -29,14 +30,14 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public UserDto create(CreateUserRequestDto requestDto) {
-    Optional<User> userOptional = userRepository.findByEmail(requestDto.email());
+  public UserDto create(String name, String email, String password) {
+    Optional<User> userOptional = userRepository.findByEmail(email);
     if (userOptional.isPresent()) {
-      throw new AlreadyExistsException("User with email " + requestDto.email() + " already exists");
+      throw new AlreadyExistsException("User with email " + email + " already exists");
     }
 
-    String hashedPassword = passwordHasher.encode(requestDto.password());
-    User user = new User(requestDto.name(), requestDto.email(), hashedPassword, true);
+    String hashedPassword = passwordHasher.encode(password);
+    User user = new User(name, email, hashedPassword, true);
     userRepository.save(user);
 
     return userMapper.toDto(user);
@@ -57,17 +58,22 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public UserDto updatePassword(UUID userId, UpdateUserPasswordRequestDto request) {
+  public UserDto updatePassword(UUID userId, String oldPassword, String newPassword) {
     Optional<User>  userOptional = userRepository.findById(userId);
     checkUserExists(userOptional, userId);
 
     User user = userOptional.get();
-    String hashedOldPassword = passwordHasher.encode(request.oldPassword());
+    String hashedOldPassword = passwordHasher.encode(oldPassword);
     if (!passwordHasher.matches(user.getHashedPassword(), hashedOldPassword)) {
       throw new InvalidCredentialsException("Invalid credentials");
     }
 
-    return null;
+    String hashedNewPassword = passwordHasher.encode(newPassword);
+
+    user.setHashedPassword(hashedNewPassword);
+    userRepository.save(user);
+
+    return userMapper.toDto(user);
   }
 
   @Override

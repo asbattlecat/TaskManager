@@ -1,4 +1,8 @@
 package org.example.taskmanager.taskmanager.controller.dto;
 
-public record UserDto(String name, String email, boolean active) {
+import jakarta.validation.constraints.NotNull;
+
+public record UserDto(@NotNull String name,
+                      @NotNull String email,
+                      @NotNull boolean active) {
 }
