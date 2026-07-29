@@ -11,6 +11,7 @@ import org.example.taskmanager.taskmanager.repository.WorkspaceRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceService;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class WorkspaceServiceImpl implements WorkspaceService {
@@ -41,5 +42,35 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
     List<Project> projects = workspaceRepository.findAllByWorkspaceId(workspaceId);
     return projects.stream().map(projectMapper::toDto).toList();
+  }
+
+  @Override
+  public WorkspaceDto changeName(UUID workspaceId, String newName) {
+    Optional<Workspace> workspaceOptional = workspaceRepository.findById(workspaceId);
+
+    if (workspaceOptional.isEmpty()) {
+      throw new NotFoundException("Workspace not found");
+    }
+
+    Workspace workspace = workspaceOptional.get();
+    workspace.setName(newName);
+    workspaceRepository.save(workspace);
+
+    return workspaceMapper.toDto(workspace);
+  }
+
+  @Override
+  public WorkspaceDto changeDescription(UUID workspaceId, String newDescription) {
+    Optional<Workspace> workspaceOptional = workspaceRepository.findById(workspaceId);
+
+    if (workspaceOptional.isEmpty()) {
+      throw new NotFoundException("Workspace not found");
+    }
+
+    Workspace workspace = workspaceOptional.get();
+    workspace.setDescription(newDescription);
+    workspaceRepository.save(workspace);
+
+    return workspaceMapper.toDto(workspace);
   }
 }

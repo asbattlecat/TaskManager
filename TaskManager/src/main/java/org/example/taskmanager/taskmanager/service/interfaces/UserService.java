@@ -1,7 +1,5 @@
 package org.example.taskmanager.taskmanager.service.interfaces;
 
-import org.example.taskmanager.taskmanager.controller.dto.CreateUserRequest;
-import org.example.taskmanager.taskmanager.controller.dto.UpdateUserPasswordRequest;
 import org.example.taskmanager.taskmanager.controller.dto.UserDto;
 
 import java.util.UUID;

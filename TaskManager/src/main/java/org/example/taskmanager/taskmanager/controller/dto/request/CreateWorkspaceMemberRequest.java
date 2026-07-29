@@ -1,4 +1,4 @@
-package org.example.taskmanager.taskmanager.controller.dto;
+package org.example.taskmanager.taskmanager.controller.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceRole;

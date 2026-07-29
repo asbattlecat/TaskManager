@@ -1,14 +1,12 @@
 package org.example.taskmanager.taskmanager.service;
 
-import jakarta.validation.constraints.NotNull;
-import org.example.taskmanager.taskmanager.controller.dto.CreateUserRequest;
-import org.example.taskmanager.taskmanager.controller.dto.UpdateUserPasswordRequest;
 import org.example.taskmanager.taskmanager.controller.dto.UserDto;
 import org.example.taskmanager.taskmanager.domain.entity.User;
 import org.example.taskmanager.taskmanager.infrastructure.exceptions.AlreadyExistsException;
 import org.example.taskmanager.taskmanager.infrastructure.exceptions.InvalidCredentialsException;
 import org.example.taskmanager.taskmanager.infrastructure.exceptions.NotFoundException;
 import org.example.taskmanager.taskmanager.infrastructure.security.PasswordHasher;
+import org.example.taskmanager.taskmanager.infrastructure.util.Checker;
 import org.example.taskmanager.taskmanager.mapper.UserMapper;
 import org.example.taskmanager.taskmanager.repository.UserRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.UserService;
@@ -46,7 +44,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserDto updateUserInfo(UUID userId, UserDto dto) {
     Optional<User> userOptional = userRepository.findById(userId);
-    checkUserExists(userOptional, userId);
+    checkUserExists(userOptional);
     User user = userOptional.get();
 
     user.setName(dto.name());
@@ -60,7 +58,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserDto updatePassword(UUID userId, String oldPassword, String newPassword) {
     Optional<User>  userOptional = userRepository.findById(userId);
-    checkUserExists(userOptional, userId);
+    checkUserExists(userOptional);
 
     User user = userOptional.get();
     String hashedOldPassword = passwordHasher.encode(oldPassword);
@@ -79,7 +77,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserDto activate(UUID userId) {
     Optional<User>  userOptional = userRepository.findById(userId);
-    checkUserExists(userOptional, userId);
+    checkUserExists(userOptional);
 
     User user = userOptional.get();
     if (user.isActive()) {
@@ -94,7 +92,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserDto deactivate(UUID userId) {
     Optional<User>  userOptional = userRepository.findById(userId);
-    checkUserExists(userOptional, userId);
+    checkUserExists(userOptional);
 
     User user = userOptional.get();
     if (!user.isActive()) {
@@ -109,7 +107,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserDto delete(UUID id) {
     Optional<User> userOptional = userRepository.findById(id);
-    checkUserExists(userOptional, id);
+    checkUserExists(userOptional);
 
     userRepository.deleteById(id);
     return userMapper.toDto(userOptional.get());
@@ -118,7 +116,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserDto getById(UUID id) {
     Optional<User> userOptional = userRepository.findById(id);
-    checkUserExists(userOptional, id);
+    checkUserExists(userOptional);
 
     return userMapper.toDto(userOptional.get());
   }
@@ -126,20 +124,14 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserDto getByEmail(String email) {
     Optional<User> userOptional = userRepository.findByEmail(email);
-    checkUserExists(userOptional, email);
+    checkUserExists(userOptional);
 
     return userMapper.toDto(userOptional.get());
   }
 
-  private void checkUserExists(Optional<User> userOptional, UUID id) {
+  private void checkUserExists(Optional<User> userOptional) {
     if (userOptional.isEmpty()) {
-      throw new NotFoundException("User with id " + id + " not found");
-    }
-  }
-
-  private void checkUserExists(Optional<User> userOptional, String email) {
-    if (userOptional.isEmpty()) {
-      throw new NotFoundException("User with email " + email + " not found");
+      throw new NotFoundException("User not found");
     }
   }
 }

@@ -11,12 +11,14 @@ import org.example.taskmanager.taskmanager.repository.UserRepository;
 import org.example.taskmanager.taskmanager.repository.WorkspaceMemberRepository;
 import org.example.taskmanager.taskmanager.repository.WorkspaceRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceMemberService;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 
+@Service
 public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
   private final UserRepository userRepository;
   private final WorkspaceMemberRepository workspaceMemberRepository;

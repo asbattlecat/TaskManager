@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface WorkspaceService {
   WorkspaceDto create(String name, String description, UUID ownerId);
   List<ProjectDto> getProjects(UUID workspaceId);
+  WorkspaceDto changeName(UUID workspaceId, String newName);
+  WorkspaceDto changeDescription(UUID workspaceId, String newDescription);
 }

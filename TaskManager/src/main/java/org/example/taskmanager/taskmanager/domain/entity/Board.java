@@ -28,6 +28,9 @@ public class Board {
   @Column(nullable = false)
   private String name;
 
+  @Column
+  private String description;
+
   @Column(nullable = false)
   private BoardType type;
 
@@ -37,7 +40,7 @@ public class Board {
   @Column
   private Instant updatedAt;
 
-  public Board(@NotNull UUID projectId, @NotNull String name, @NotNull BoardType type) {
+  public Board(@NotNull UUID projectId, @NotNull String name, String description, @NotNull BoardType type) {
     id = UUID.randomUUID();
 
     this.projectId = projectId;
