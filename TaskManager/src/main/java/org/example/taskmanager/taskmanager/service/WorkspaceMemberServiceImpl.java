@@ -42,7 +42,7 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
     // workspace member должен быть уникален для workspace
     if (workspaceMemberRepository.
             existsByUserIdAndWorkspaceId(userId, workspaceId)) {
-      throw new AlreadyExistsException("WorkspaceMember not found");
+      throw new AlreadyExistsException("WorkspaceMember already exists");
     }
 
     WorkspaceMember workspaceMember = new WorkspaceMember(workspaceId, userId,
@@ -54,23 +54,20 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
   @Override
   public WorkspaceMemberDto deleteMember(UUID memberId, UUID workspaceId, UUID userId) throws NotFoundException {
     userAndWorkspaceExists(userId, workspaceId);
-    Optional<WorkspaceMember> workspaceMemberOptional = workspaceMemberRepository.findById(memberId);
-    if (workspaceMemberOptional.isEmpty()) {
-      throw new NotFoundException("Such WorkspaceMember not found");
-    }
 
-    workspaceMemberRepository.delete(workspaceMemberOptional.get());
-    return workspaceMemberMapper.toDto(workspaceMemberOptional.get());
+    WorkspaceMember workspaceMember = workspaceMemberRepository.findById(memberId)
+            .orElseThrow(() -> new NotFoundException("Member not found"));
+
+    workspaceMemberRepository.delete(workspaceMember);
+    return workspaceMemberMapper.toDto(workspaceMember);
   }
 
   @Override
-  public WorkspaceMemberDto setRoleToMember(UUID workspaceMemberId, WorkspaceRole role) {
-    Optional<WorkspaceMember> workspaceMemberOptional = workspaceMemberRepository.findById(workspaceMemberId);
-    if (workspaceMemberOptional.isEmpty()) {
-      throw new NotFoundException("WorkspaceMember not found");
-    }
+  public WorkspaceMemberDto setRoleToMember(UUID memberId, WorkspaceRole role) {
 
-    WorkspaceMember workspaceMember = workspaceMemberOptional.get();
+    WorkspaceMember workspaceMember = workspaceMemberRepository.findById(memberId)
+            .orElseThrow(() -> new NotFoundException("Member not found"));
+
     workspaceMember.setRole(role);
     workspaceMemberRepository.save(workspaceMember);
 
@@ -79,11 +76,11 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
 
   @Override
   public List<WorkspaceMemberDto> getMembers(UUID workspaceId) {
-    if (!workspaceRepository.existsById(workspaceId)) {
+    List<WorkspaceMember> members = workspaceMemberRepository.findAllByWorkspaceId(workspaceId);
+    if (members.isEmpty()) {
       throw new NotFoundException("Workspace not found");
     }
 
-    List<WorkspaceMember> members = workspaceMemberRepository.findAllByWorkspaceId(workspaceId);
     return members.stream().map(workspaceMemberMapper::toDto).toList();
   }
 

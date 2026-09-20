@@ -11,7 +11,6 @@ import org.example.taskmanager.taskmanager.repository.WorkspaceRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceService;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public class WorkspaceServiceImpl implements WorkspaceService {
@@ -36,23 +35,19 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
   @Override
   public List<ProjectDto> getProjects(UUID workspaceId) {
-    if (!workspaceRepository.existsById(workspaceId)) {
+    List<Project> projects = workspaceRepository.findAllByWorkspaceId(workspaceId);
+    if (projects.isEmpty()) {
       throw new NotFoundException("Workspace not found");
     }
 
-    List<Project> projects = workspaceRepository.findAllByWorkspaceId(workspaceId);
     return projects.stream().map(projectMapper::toDto).toList();
   }
 
   @Override
   public WorkspaceDto changeName(UUID workspaceId, String newName) {
-    Optional<Workspace> workspaceOptional = workspaceRepository.findById(workspaceId);
+    Workspace workspace = workspaceRepository.findById(workspaceId)
+            .orElseThrow(() -> new NotFoundException("Workspace not found"));
 
-    if (workspaceOptional.isEmpty()) {
-      throw new NotFoundException("Workspace not found");
-    }
-
-    Workspace workspace = workspaceOptional.get();
     workspace.setName(newName);
     workspaceRepository.save(workspace);
 
@@ -61,13 +56,9 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
   @Override
   public WorkspaceDto changeDescription(UUID workspaceId, String newDescription) {
-    Optional<Workspace> workspaceOptional = workspaceRepository.findById(workspaceId);
+    Workspace workspace = workspaceRepository.findById(workspaceId)
+            .orElseThrow(() -> new NotFoundException("Workspace not found"));
 
-    if (workspaceOptional.isEmpty()) {
-      throw new NotFoundException("Workspace not found");
-    }
-
-    Workspace workspace = workspaceOptional.get();
     workspace.setDescription(newDescription);
     workspaceRepository.save(workspace);
 

@@ -1,4 +1,4 @@
-package org.example.taskmanager.taskmanager.service.interfaces;
+package org.example.taskmanager.taskmanager.service;
 
 import org.example.taskmanager.taskmanager.controller.dto.BoardDto;
 import org.example.taskmanager.taskmanager.controller.dto.ProjectDto;
@@ -10,6 +10,7 @@ import org.example.taskmanager.taskmanager.mapper.ProjectMapper;
 import org.example.taskmanager.taskmanager.repository.BoardRepository;
 import org.example.taskmanager.taskmanager.repository.ProjectRepository;
 import org.example.taskmanager.taskmanager.repository.WorkspaceRepository;
+import org.example.taskmanager.taskmanager.service.interfaces.ProjectService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -37,9 +38,8 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public ProjectDto create(UUID workspaceId, String name, String description) {
-    if (!workspaceRepository.existsById(workspaceId)) {
-      throw new NotFoundException("Workspace not found");
-    }
+    workspaceRepository.findById(workspaceId)
+            .orElseThrow(() -> new NotFoundException("Workspace not found"));
 
     Project project = new Project(workspaceId, name, description);
     projectRepository.save(project);
@@ -49,24 +49,20 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public ProjectDto delete(UUID projectId) {
-    Optional<Project> projectOptional = projectRepository.findById(projectId);
-    if (projectOptional.isEmpty()) {
-      throw new NotFoundException("Project not found");
-    }
+    Project project = projectRepository.findById(projectId)
+            .orElseThrow(() ->
+            new NotFoundException("Project not found"));
 
-    projectRepository.delete(projectOptional.get());
+    projectRepository.delete(project);
 
-    return projectMapper.toDto(projectOptional.get());
+    return projectMapper.toDto(project);
   }
 
   @Override
   public ProjectDto archive(UUID projectId) {
-    Optional<Project> projectOptional = projectRepository.findById(projectId);
-    if (projectOptional.isEmpty()) {
-      throw new NotFoundException("Project not found");
-    }
+    Project  project = projectRepository.findById(projectId)
+            .orElseThrow(() -> new NotFoundException("Project not found"));
 
-    Project project = projectOptional.get();
     project.setArchived(true);
     projectRepository.save(project);
 
@@ -80,7 +76,8 @@ public class ProjectServiceImpl implements ProjectService {
       throw new NotFoundException("Project not found");
     }
 
-    Project project = projectOptional.get();
+    Project project = projectRepository.findById(projectId)
+                    .orElseThrow(() -> new NotFoundException("Project not found"));
     project.setArchived(false);
     projectRepository.save(project);
 
@@ -89,23 +86,19 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public List<BoardDto> getProjectBoards(UUID projectId) {
-    if (!projectRepository.existsById(projectId)) {
+    List<Board> boards = boardRepository.findBoardsByProjectId(projectId);
+    if (boards.isEmpty()) {
       throw new NotFoundException("Project not found");
     }
-
-    List<Board> boards = boardRepository.getBoardsByProjectId(projectId);
 
     return boards.stream().map(boardMapper::toDto).toList();
   }
 
   @Override
   public ProjectDto changeName(UUID projectId, String newName) {
-    Optional<Project> projectOptional = projectRepository.findById(projectId);
-    if (projectOptional.isEmpty()) {
-      throw new NotFoundException("Project not found");
-    }
+    Project project = projectRepository.findById(projectId)
+                    .orElseThrow(() -> new NotFoundException("Project not found"));
 
-    Project project = projectOptional.get();
     project.setName(newName);
     projectRepository.save(project);
 
@@ -114,12 +107,9 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public ProjectDto changeDescription(UUID projectId, String newDescription) {
-    Optional<Project> projectOptional = projectRepository.findById(projectId);
-    if (projectOptional.isEmpty()) {
-      throw new NotFoundException("Project not found");
-    }
+    Project project = projectRepository.findById(projectId)
+                    .orElseThrow(() -> new NotFoundException("Project not found"));
 
-    Project project = projectOptional.get();
     project.setDescription(newDescription);
     projectRepository.save(project);
 
