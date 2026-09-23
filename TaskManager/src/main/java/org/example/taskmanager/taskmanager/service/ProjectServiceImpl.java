@@ -71,13 +71,9 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public ProjectDto unarchive(UUID projectId) {
-    Optional<Project> projectOptional = projectRepository.findById(projectId);
-    if (projectOptional.isEmpty()) {
-      throw new NotFoundException("Project not found");
-    }
-
     Project project = projectRepository.findById(projectId)
                     .orElseThrow(() -> new NotFoundException("Project not found"));
+
     project.setArchived(false);
     projectRepository.save(project);
 

@@ -8,5 +8,4 @@ import java.util.List;
 import java.util.UUID;
 
 public interface WorkspaceRepository extends JpaRepository<Workspace, UUID> {
-  List<Project> findAllByWorkspaceId(UUID workspaceId);
 }

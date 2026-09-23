@@ -45,6 +45,7 @@ public class Board {
 
     this.projectId = projectId;
     this.name = name;
+    this.description = description;
     this.type = type;
 
     createdAt = Instant.now();
