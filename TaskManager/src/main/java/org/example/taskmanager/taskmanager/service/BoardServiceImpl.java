@@ -16,12 +16,13 @@ import org.example.taskmanager.taskmanager.repository.BoardRepository;
 import org.example.taskmanager.taskmanager.repository.ProjectRepository;
 import org.example.taskmanager.taskmanager.repository.TaskRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.BoardService;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+@Service
 public class BoardServiceImpl implements BoardService {
   private final ProjectRepository projectRepository;
   private final BoardRepository boardRepository;

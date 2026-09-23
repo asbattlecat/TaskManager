@@ -10,10 +10,12 @@ import org.example.taskmanager.taskmanager.mapper.WorkspaceMapper;
 import org.example.taskmanager.taskmanager.repository.ProjectRepository;
 import org.example.taskmanager.taskmanager.repository.WorkspaceRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceService;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 
+@Service
 public class WorkspaceServiceImpl implements WorkspaceService {
   private final ProjectRepository projectRepository;
   private final WorkspaceRepository workspaceRepository;
