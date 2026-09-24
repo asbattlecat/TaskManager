@@ -1,18 +1,21 @@
 package org.example.taskmanager.taskmanager.service;
 
+import org.example.taskmanager.taskmanager.controller.dto.CommentDto;
+import org.example.taskmanager.taskmanager.controller.dto.TagDto;
 import org.example.taskmanager.taskmanager.controller.dto.TaskDto;
-import org.example.taskmanager.taskmanager.domain.entity.Tag;
-import org.example.taskmanager.taskmanager.domain.entity.Task;
+import org.example.taskmanager.taskmanager.domain.entity.*;
 import org.example.taskmanager.taskmanager.domain.enums.TagColor;
 import org.example.taskmanager.taskmanager.domain.enums.TaskPriority;
 import org.example.taskmanager.taskmanager.domain.enums.TaskStatus;
 import org.example.taskmanager.taskmanager.infrastructure.exceptions.NotFoundException;
+import org.example.taskmanager.taskmanager.infrastructure.specification.TaskSpecification;
+import org.example.taskmanager.taskmanager.mapper.CommentMapper;
+import org.example.taskmanager.taskmanager.mapper.TagMapper;
+import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceAccessChecker;
 import org.example.taskmanager.taskmanager.mapper.TaskMapper;
-import org.example.taskmanager.taskmanager.repository.BoardColumnRepository;
-import org.example.taskmanager.taskmanager.repository.CommentRepository;
-import org.example.taskmanager.taskmanager.repository.TagRepository;
-import org.example.taskmanager.taskmanager.repository.TaskRepository;
+import org.example.taskmanager.taskmanager.repository.*;
 import org.example.taskmanager.taskmanager.service.interfaces.TaskService;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -22,19 +25,28 @@ import java.util.UUID;
 @Service
 public class TaskServiceImpl implements TaskService {
   private final TaskRepository taskRepository;
-  private final TagRepository tagRepository;
-  private final CommentRepository commentRepository;
   private final BoardColumnRepository boardColumnRepository;
-  private final TaskMapper taskMapper;
+  private final CommentRepository commentRepository;
+  private final TagRepository tagRepository;
 
-  public  TaskServiceImpl(TaskRepository taskRepository, TagRepository tagRepository,
-                          CommentRepository commentRepository, TaskMapper taskMapper,
-                          BoardColumnRepository boardColumnRepository) {
+  private final WorkspaceAccessChecker workspaceAccessChecker;
+
+  private final TaskMapper taskMapper;
+  private final TagMapper tagMapper;
+  private final CommentMapper commentMapper;
+
+  public  TaskServiceImpl(TaskRepository taskRepository,
+                          BoardColumnRepository boardColumnRepository, CommentRepository commentRepository,
+                          TagRepository tagRepository, WorkspaceAccessChecker workspaceAccessChecker,
+                          TaskMapper taskMapper, TagMapper tagMapper, CommentMapper commentMapper) {
     this.taskRepository = taskRepository;
-    this.tagRepository = tagRepository;
-    this.commentRepository = commentRepository;
-    this.taskMapper = taskMapper;
     this.boardColumnRepository = boardColumnRepository;
+    this.commentRepository = commentRepository;
+    this.tagRepository = tagRepository;
+    this.workspaceAccessChecker = workspaceAccessChecker;
+    this.taskMapper = taskMapper;
+    this.tagMapper = tagMapper;
+    this.commentMapper = commentMapper;
   }
 
 
@@ -42,6 +54,7 @@ public class TaskServiceImpl implements TaskService {
   public TaskDto create(UUID boardId, UUID columnId, String name, String description,
                         TaskStatus status, TaskPriority priority, UUID assigneeId,
                         UUID creatorId, Instant deadline) {
+    
     Task task = new Task(boardId, columnId, name, description, status, priority,
             assigneeId, creatorId, deadline);
 
@@ -115,27 +128,63 @@ public class TaskServiceImpl implements TaskService {
 
   @Override
   public TaskDto changeStatus(UUID taskId, TaskStatus newStatus) {
-    return null;
+    Task task = getTask(taskId);
+
+    if (!task.getStatus().equals(newStatus)) {
+      task.setStatus(newStatus);
+      taskRepository.save(task);
+    }
+
+    return taskMapper.toDto(task);
   }
 
   @Override
-  public TaskDto setAssignee(UUID taskId, UUID assigneeId) {
-    return null;
+  public TaskDto setAssignee(UUID taskId, UUID workspaceMemberId) {
+    Task task = getTask(taskId);
+
+    workspaceAccessChecker.check(task, workspaceMemberId);
+
+    if (!task.getAssigneeId().equals(workspaceMemberId)) {
+      task.setAssigneeId(workspaceMemberId);
+      taskRepository.save(task);
+    }
+
+    return taskMapper.toDto(task);
   }
 
   @Override
-  public void addComment(UUID taskId, UUID authorId, String content) {
+  public CommentDto addComment(UUID taskId, UUID workspaceMemberId, String content) {
+    Task task = getTask(taskId);
 
+    workspaceAccessChecker.check(task, workspaceMemberId);
+
+    Comment comment = new Comment(taskId, workspaceMemberId, content);
+    commentRepository.save(comment);
+
+    return commentMapper.toDto(comment);
   }
 
   @Override
-  public void addTag(UUID taskId, String name, TagColor color) {
+  public TagDto addTag(UUID taskId, String name, TagColor color) {
+    getTask(taskId);
 
+    Tag tag = new Tag(taskId, name, color);
+    tagRepository.save(tag);
+
+    return tagMapper.toDto(tag);
   }
 
   @Override
   public List<TaskDto> filter(TaskStatus status, UUID assigneeId, Tag tag) {
-    return List.of();
+    Specification<Task> spec = Specification.where((Specification<Task>) null);
+
+    if (status != null) spec = spec.and(TaskSpecification.statusContains(status));
+    if (assigneeId != null) spec = spec.and(TaskSpecification.assigneeContains(assigneeId));
+    if (tag != null) spec = spec.and(TaskSpecification.tagContains(tag));
+
+    List<Task> tasks = taskRepository.findAll(spec);
+
+    return tasks.stream().map(taskMapper::toDto).toList();
   }
 
   private Task getTask(UUID taskId) {

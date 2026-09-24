@@ -1,5 +1,7 @@
 package org.example.taskmanager.taskmanager.service.interfaces;
 
+import org.example.taskmanager.taskmanager.controller.dto.CommentDto;
+import org.example.taskmanager.taskmanager.controller.dto.TagDto;
 import org.example.taskmanager.taskmanager.controller.dto.TaskDto;
 import org.example.taskmanager.taskmanager.domain.entity.Tag;
 import org.example.taskmanager.taskmanager.domain.enums.TagColor;
@@ -19,8 +21,8 @@ public interface TaskService {
   TaskDto changeColumn(UUID taskId, UUID newColumnId);
   TaskDto changeDeadline(UUID taskId, Instant newDeadline);
   TaskDto changeStatus(UUID taskId, TaskStatus newStatus);
-  TaskDto setAssignee(UUID taskId, UUID assigneeId);
-  void addComment(UUID taskId, UUID authorId, String content);
-  void addTag(UUID taskId, String name, TagColor color);
+  TaskDto setAssignee(UUID taskId, UUID workspaceMemberId);
+  CommentDto addComment(UUID taskId, UUID workspaceMemberId, String content);
+  TagDto addTag(UUID taskId, String name, TagColor color);
   List<TaskDto> filter(TaskStatus status, UUID assigneeId, Tag tag);
 }

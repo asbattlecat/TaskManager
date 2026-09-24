@@ -52,9 +52,7 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
   }
 
   @Override
-  public WorkspaceMemberDto deleteMember(UUID memberId, UUID workspaceId, UUID userId) throws NotFoundException {
-    userAndWorkspaceExists(userId, workspaceId);
-
+  public WorkspaceMemberDto deleteMember(UUID memberId) throws NotFoundException {
     WorkspaceMember workspaceMember = workspaceMemberRepository.findById(memberId)
             .orElseThrow(() -> new NotFoundException("Member not found"));
 

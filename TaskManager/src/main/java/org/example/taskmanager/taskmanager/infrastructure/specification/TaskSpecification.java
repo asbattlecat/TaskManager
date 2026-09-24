@@ -1,7 +1,5 @@
 package org.example.taskmanager.taskmanager.infrastructure.specification;
 
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Root;
 import org.example.taskmanager.taskmanager.domain.entity.Tag;
 import org.example.taskmanager.taskmanager.domain.entity.Task;

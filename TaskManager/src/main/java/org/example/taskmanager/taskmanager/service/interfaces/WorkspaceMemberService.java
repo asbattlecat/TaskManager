@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public interface WorkspaceMemberService {
   WorkspaceMemberDto createMember(UUID workspaceId, UUID userId, WorkspaceRole role);
-  WorkspaceMemberDto deleteMember(UUID memberId, UUID workspaceId, UUID userId);
+  WorkspaceMemberDto deleteMember(UUID memberId);
   WorkspaceMemberDto setRoleToMember(UUID workspaceMemberId, WorkspaceRole role);
   List<WorkspaceMemberDto> getMembers(UUID workspaceId);
 }
