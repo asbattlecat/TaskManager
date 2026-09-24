@@ -54,11 +54,20 @@ public class TaskServiceImpl implements TaskService {
   public TaskDto create(UUID boardId, UUID columnId, String name, String description,
                         TaskStatus status, TaskPriority priority, UUID assigneeId,
                         UUID creatorId, Instant deadline) {
-    
+
     Task task = new Task(boardId, columnId, name, description, status, priority,
             assigneeId, creatorId, deadline);
 
     taskRepository.save(task);
+
+    return taskMapper.toDto(task);
+  }
+
+  @Override
+  public TaskDto delete(UUID taskId) {
+    Task task = getTask(taskId);
+
+    taskRepository.delete(task);
 
     return taskMapper.toDto(task);
   }
@@ -165,12 +174,42 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
+  public CommentDto deleteComment(UUID taskId, UUID commentId) {
+    getTask(taskId);
+
+    Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new NotFoundException("Comment not found"));
+
+    if (!comment.getTaskId().equals(taskId)) {
+      throw new IllegalArgumentException("Comment does not belong to this task");
+    }
+
+    commentRepository.delete(comment);
+    return commentMapper.toDto(comment);
+  }
+
+  @Override
   public TagDto addTag(UUID taskId, String name, TagColor color) {
     getTask(taskId);
 
     Tag tag = new Tag(taskId, name, color);
     tagRepository.save(tag);
 
+    return tagMapper.toDto(tag);
+  }
+
+  @Override
+  public TagDto deleteTag(UUID taskId, UUID tagId) {
+    getTask(taskId);
+
+    Tag tag = tagRepository.findById(tagId)
+            .orElseThrow(() -> new NotFoundException("Tag not found"));
+
+    if (!tag.getTaskId().equals(taskId)) {
+      throw new  IllegalArgumentException("Tag does not belong to this task");
+    }
+
+    tagRepository.delete(tag);
     return tagMapper.toDto(tag);
   }
 
