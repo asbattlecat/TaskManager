@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.BoardType;
 
 import java.time.Instant;
@@ -24,6 +25,9 @@ public class Board {
 
   @Column
   private boolean archived;
+
+  @Column(nullable = false)
+  private ArchiveReason archiveReason;
 
   @Column(nullable = false)
   private UUID projectId;
@@ -46,8 +50,10 @@ public class Board {
   public Board(@NotNull UUID projectId, @NotNull String name, String description, @NotNull BoardType type) {
     id = UUID.randomUUID();
 
-    this.projectId = projectId;
     archived = false;
+    archiveReason = ArchiveReason.NONE;
+
+    this.projectId = projectId;
     this.name = name;
     this.description = description;
     this.type = type;

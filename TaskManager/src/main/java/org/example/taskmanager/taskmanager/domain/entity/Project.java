@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -20,6 +21,12 @@ import java.util.UUID;
 public class Project {
   @Id
   private UUID id;
+
+  @Column
+  private boolean archived;
+
+  @Column(nullable = false)
+  private ArchiveReason archiveReason;
 
   @Column(nullable = false)
   private UUID workspaceId;
@@ -36,17 +43,15 @@ public class Project {
   @Column
   private Instant updatedAt;
 
-  @Column
-  private boolean archived;
-
   public Project(@NotNull UUID workspaceId, @NotNull String name, String description) {
     id = UUID.randomUUID();
+    archived = false;
+    archiveReason = ArchiveReason.NONE;
 
     this.workspaceId = workspaceId;
     this.name = name;
     this.description = description;
 
     this.createdAt = Instant.now();
-    archived = false;
   }
 }

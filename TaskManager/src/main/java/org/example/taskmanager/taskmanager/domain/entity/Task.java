@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.TaskPriority;
 import org.example.taskmanager.taskmanager.domain.enums.TaskStatus;
 
@@ -23,6 +24,9 @@ public class Task {
 
   @Column
   private boolean archived;
+
+  @Column(nullable = false)
+  private ArchiveReason archiveReason;
 
   @Column(nullable = false)
   private UUID boardId;
@@ -67,6 +71,7 @@ public class Task {
     id = UUID.randomUUID();
 
     archived = false;
+    archiveReason = ArchiveReason.NONE;
 
     this.boardId = boardId;
     this.columnId = columnId;

@@ -7,6 +7,9 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.example.taskmanager.taskmanager.controller.dto.event.WorkspaceArchived;
+import org.example.taskmanager.taskmanager.controller.dto.event.WorkspaceUnarchived;
+import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -23,6 +26,9 @@ public class Workspace {
 
   @Column
   private boolean archived;
+
+  @Column(nullable = false)
+  private ArchiveReason archiveReason;
 
   @Column(nullable = false)
   private String name;
@@ -44,11 +50,34 @@ public class Workspace {
     id =  UUID.randomUUID();
 
     archived = false;
+    archiveReason = ArchiveReason.NONE;
 
     this.name = name;
     this.description = description;
     this.ownerId = ownerId;
 
     this.createdAt = Instant.now();
+  }
+
+  public WorkspaceArchived archive(@NotNull ArchiveReason reason) {
+    if (archived) {
+      throw new IllegalStateException("Cannot archive twice");
+    }
+
+    archived = true;
+    archiveReason = reason;
+
+    return new WorkspaceArchived(id, reason);
+  }
+
+  public WorkspaceUnarchived unarchive() {
+    if (!archived) {
+      throw new IllegalStateException("Cannot unarchive twice");
+    }
+
+    archived = false;
+    archiveReason = ArchiveReason.NONE;
+
+    return new WorkspaceUnarchived(id);
   }
 }
