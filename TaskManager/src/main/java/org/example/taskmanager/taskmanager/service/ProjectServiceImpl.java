@@ -48,17 +48,6 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   @Override
-  public ProjectDto delete(UUID projectId) {
-    Project project = projectRepository.findById(projectId)
-            .orElseThrow(() ->
-            new NotFoundException("Project not found"));
-
-    projectRepository.delete(project);
-
-    return projectMapper.toDto(project);
-  }
-
-  @Override
   public ProjectDto archive(UUID projectId) {
     Project  project = projectRepository.findById(projectId)
             .orElseThrow(() -> new NotFoundException("Project not found"));

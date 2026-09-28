@@ -8,7 +8,6 @@ import java.util.UUID;
 
 public interface ProjectService {
   ProjectDto create(UUID workspaceId, String name, String description);
-  ProjectDto delete(UUID projectId);
   ProjectDto archive(UUID projectId);
   ProjectDto unarchive(UUID projectId);
   List<BoardDto> getProjectBoards(UUID projectId);

@@ -3,7 +3,9 @@ package org.example.taskmanager.taskmanager.repository;
 import org.example.taskmanager.taskmanager.domain.entity.AuditEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface AuditEntityRepository extends JpaRepository<AuditEntity, UUID> {
+  List<AuditEntity> findAllByTaskIdOrderByTimestampAsc(UUID taskId);
 }

@@ -1,5 +1,6 @@
 package org.example.taskmanager.taskmanager.service;
 
+import org.example.taskmanager.taskmanager.controller.dto.AuditEntityDto;
 import org.example.taskmanager.taskmanager.controller.dto.CommentDto;
 import org.example.taskmanager.taskmanager.controller.dto.TagDto;
 import org.example.taskmanager.taskmanager.controller.dto.TaskDto;
@@ -9,6 +10,7 @@ import org.example.taskmanager.taskmanager.domain.enums.TaskPriority;
 import org.example.taskmanager.taskmanager.domain.enums.TaskStatus;
 import org.example.taskmanager.taskmanager.infrastructure.exceptions.NotFoundException;
 import org.example.taskmanager.taskmanager.infrastructure.specification.TaskSpecification;
+import org.example.taskmanager.taskmanager.mapper.AuditEntityMapper;
 import org.example.taskmanager.taskmanager.mapper.CommentMapper;
 import org.example.taskmanager.taskmanager.mapper.TagMapper;
 import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceAccessChecker;
@@ -28,25 +30,31 @@ public class TaskServiceImpl implements TaskService {
   private final BoardColumnRepository boardColumnRepository;
   private final CommentRepository commentRepository;
   private final TagRepository tagRepository;
+  private final AuditEntityRepository auditEntityRepository;
 
   private final WorkspaceAccessChecker workspaceAccessChecker;
 
   private final TaskMapper taskMapper;
   private final TagMapper tagMapper;
   private final CommentMapper commentMapper;
+  private final AuditEntityMapper auditEntityMapper;
 
   public  TaskServiceImpl(TaskRepository taskRepository,
                           BoardColumnRepository boardColumnRepository, CommentRepository commentRepository,
+                          AuditEntityRepository auditEntityRepository,
                           TagRepository tagRepository, WorkspaceAccessChecker workspaceAccessChecker,
-                          TaskMapper taskMapper, TagMapper tagMapper, CommentMapper commentMapper) {
+                          TaskMapper taskMapper, TagMapper tagMapper, CommentMapper commentMapper,
+                          AuditEntityMapper auditEntityMapper) {
     this.taskRepository = taskRepository;
     this.boardColumnRepository = boardColumnRepository;
     this.commentRepository = commentRepository;
     this.tagRepository = tagRepository;
+    this.auditEntityRepository = auditEntityRepository;
     this.workspaceAccessChecker = workspaceAccessChecker;
     this.taskMapper = taskMapper;
     this.tagMapper = tagMapper;
     this.commentMapper = commentMapper;
+    this.auditEntityMapper = auditEntityMapper;
   }
 
 
@@ -64,19 +72,12 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
-  public TaskDto delete(UUID taskId) {
-    Task task = getTask(taskId);
-
-    taskRepository.delete(task);
-
-    return taskMapper.toDto(task);
-  }
-
-  @Override
-  public TaskDto changeName(UUID taskId, String newName) {
+  public TaskDto changeName(UUID taskId, String newName, UUID userId) {
     Task task = getTask(taskId);
 
     if (!task.getName().equals(newName)) {
+      createAuditEntity(taskId, userId, "name", task.getName(), newName);
+
       task.setName(newName);
       taskRepository.save(task);
     }
@@ -85,10 +86,12 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
-  public TaskDto changeDescription(UUID taskId, String newDescription) {
+  public TaskDto changeDescription(UUID taskId, String newDescription, UUID userId) {
     Task task = getTask(taskId);
 
     if (!task.getDescription().equals(newDescription)) {
+      createAuditEntity(taskId, userId, "description", task.getDescription(), newDescription);
+
       task.setDescription(newDescription);
       taskRepository.save(task);
     }
@@ -97,10 +100,13 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
-  public TaskDto changePriority(UUID taskId, TaskPriority newPriority) {
+  public TaskDto changePriority(UUID taskId, TaskPriority newPriority, UUID userId) {
     Task task = getTask(taskId);
 
     if (!task.getPriority().equals(newPriority)) {
+      createAuditEntity(taskId, userId, "priority",
+              task.getPriority().toString(), newPriority.toString());
+
       task.setPriority(newPriority);
       taskRepository.save(task);
     }
@@ -124,10 +130,13 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
-  public TaskDto changeDeadline(UUID taskId, Instant newDeadline) {
+  public TaskDto changeDeadline(UUID taskId, Instant newDeadline, UUID userId) {
     Task task = getTask(taskId);
 
     if (!task.getDeadline().isAfter(newDeadline) && !task.getDeadline().equals(newDeadline)) {
+      createAuditEntity(taskId, userId, "deadline",
+              task.getDeadline().toString(), newDeadline.toString());
+
       task.setDeadline(newDeadline);
       taskRepository.save(task);
     }
@@ -136,10 +145,13 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
-  public TaskDto changeStatus(UUID taskId, TaskStatus newStatus) {
+  public TaskDto changeStatus(UUID taskId, TaskStatus newStatus, UUID userId) {
     Task task = getTask(taskId);
 
     if (!task.getStatus().equals(newStatus)) {
+      createAuditEntity(taskId, userId, "status",
+              task.getStatus().toString(), newStatus.toString());
+
       task.setStatus(newStatus);
       taskRepository.save(task);
     }
@@ -148,12 +160,15 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
-  public TaskDto setAssignee(UUID taskId, UUID workspaceMemberId) {
+  public TaskDto setAssignee(UUID taskId, UUID workspaceMemberId, UUID userId) {
     Task task = getTask(taskId);
 
     workspaceAccessChecker.check(task, workspaceMemberId);
 
     if (!task.getAssigneeId().equals(workspaceMemberId)) {
+      createAuditEntity(taskId, userId, "assignee",
+              task.getAssigneeId().toString(), workspaceMemberId.toString());
+
       task.setAssigneeId(workspaceMemberId);
       taskRepository.save(task);
     }
@@ -174,42 +189,12 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
-  public CommentDto deleteComment(UUID taskId, UUID commentId) {
-    getTask(taskId);
-
-    Comment comment = commentRepository.findById(commentId)
-            .orElseThrow(() -> new NotFoundException("Comment not found"));
-
-    if (!comment.getTaskId().equals(taskId)) {
-      throw new IllegalArgumentException("Comment does not belong to this task");
-    }
-
-    commentRepository.delete(comment);
-    return commentMapper.toDto(comment);
-  }
-
-  @Override
   public TagDto addTag(UUID taskId, String name, TagColor color) {
     getTask(taskId);
 
     Tag tag = new Tag(taskId, name, color);
     tagRepository.save(tag);
 
-    return tagMapper.toDto(tag);
-  }
-
-  @Override
-  public TagDto deleteTag(UUID taskId, UUID tagId) {
-    getTask(taskId);
-
-    Tag tag = tagRepository.findById(tagId)
-            .orElseThrow(() -> new NotFoundException("Tag not found"));
-
-    if (!tag.getTaskId().equals(taskId)) {
-      throw new  IllegalArgumentException("Tag does not belong to this task");
-    }
-
-    tagRepository.delete(tag);
     return tagMapper.toDto(tag);
   }
 
@@ -226,8 +211,24 @@ public class TaskServiceImpl implements TaskService {
     return tasks.stream().map(taskMapper::toDto).toList();
   }
 
+  @Override
+  public List<AuditEntityDto> getTaskChangesHistory(UUID taskId) {
+    List<AuditEntity> entities = auditEntityRepository.findAllByTaskIdOrderByTimestampAsc(taskId);
+
+    if (entities.isEmpty()) {
+      throw new NotFoundException("Task changes history is empty");
+    }
+
+    return entities.stream().map(auditEntityMapper::toDto).toList();
+  }
+
   private Task getTask(UUID taskId) {
     return taskRepository.findById(taskId)
             .orElseThrow(() -> new NotFoundException("Task not found"));
+  }
+
+  private void createAuditEntity(UUID taskId, UUID userId, String fieldName, String oldValue, String newValue) {
+    AuditEntity entity = new AuditEntity(taskId, userId, fieldName, oldValue, newValue);
+    auditEntityRepository.save(entity);
   }
 }
