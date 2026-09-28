@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public record TaskDto(
         @NotNull UUID id,
+        boolean archived,
         @NotNull  UUID boardId,
         UUID columnId,
         @NotNull String name,

@@ -22,6 +22,9 @@ public class Board {
   @Id
   private UUID id;
 
+  @Column
+  private boolean archived;
+
   @Column(nullable = false)
   private UUID projectId;
 
@@ -44,6 +47,7 @@ public class Board {
     id = UUID.randomUUID();
 
     this.projectId = projectId;
+    archived = false;
     this.name = name;
     this.description = description;
     this.type = type;

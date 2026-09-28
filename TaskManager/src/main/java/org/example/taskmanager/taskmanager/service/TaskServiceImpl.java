@@ -72,6 +72,30 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
+  public TaskDto archive(UUID taskId) {
+    Task task = getTask(taskId);
+
+    if (!task.isArchived()) {
+      task.setArchived(true);
+      taskRepository.save(task);
+    }
+
+    return  taskMapper.toDto(task);
+  }
+
+  @Override
+  public TaskDto unarchive(UUID taskId) {
+    Task task = getTask(taskId);
+
+    if (task.isArchived()) {
+      task.setArchived(false);
+      taskRepository.save(task);
+    }
+
+    return  taskMapper.toDto(task);
+  }
+
+  @Override
   public TaskDto changeName(UUID taskId, String newName, UUID userId) {
     Task task = getTask(taskId);
 

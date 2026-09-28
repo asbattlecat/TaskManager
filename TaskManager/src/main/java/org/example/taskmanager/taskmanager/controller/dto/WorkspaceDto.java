@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record WorkspaceDto(@NotNull UUID id,
+                           boolean archived,
                            @NotNull String name,
                            String description,
                            @NotNull UUID ownerId,

@@ -11,5 +11,5 @@ public record ProjectDto(@NotNull UUID id,
                          String description,
                          @NotNull Instant createdAt,
                          Instant updatedAt,
-                         @NotNull boolean archived) {
+                         boolean archived) {
 }

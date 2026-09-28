@@ -56,6 +56,32 @@ public class BoardServiceImpl implements BoardService {
   }
 
   @Override
+  public BoardDto archive(UUID boardId) {
+    Board board = boardRepository.findById(boardId)
+            .orElseThrow(() -> new NotFoundException("Board not found"));
+
+    if (!board.isArchived()) {
+      board.setArchived(true);
+      boardRepository.save(board);
+    }
+
+    return boardMapper.toDto(board);
+  }
+
+  @Override
+  public BoardDto unarchive(UUID boardId) {
+    Board board = boardRepository.findById(boardId)
+            .orElseThrow(() -> new NotFoundException("Board not found"));
+
+    if (board.isArchived()) {
+      board.setArchived(false);
+      boardRepository.save(board);
+    }
+
+    return boardMapper.toDto(board);
+  }
+
+  @Override
   public List<TaskDto> getTasks(UUID boardId) {
     if (!boardRepository.existsById(boardId)) {
       throw new NotFoundException("Board not found");

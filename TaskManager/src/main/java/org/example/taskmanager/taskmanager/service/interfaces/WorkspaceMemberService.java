@@ -10,4 +10,5 @@ public interface WorkspaceMemberService {
   WorkspaceMemberDto createMember(UUID workspaceId, UUID userId, WorkspaceRole role);
   WorkspaceMemberDto setRoleToMember(UUID workspaceMemberId, WorkspaceRole role);
   List<WorkspaceMemberDto> getMembers(UUID workspaceId);
+  WorkspaceMemberDto delete(UUID workspaceMemberId);
 }

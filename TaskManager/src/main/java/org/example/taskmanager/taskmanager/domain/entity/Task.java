@@ -21,6 +21,9 @@ public class Task {
   @Id
   private UUID id;
 
+  @Column
+  private boolean archived;
+
   @Column(nullable = false)
   private UUID boardId;
 
@@ -62,6 +65,8 @@ public class Task {
               @NotNull TaskStatus status, @NotNull TaskPriority priority, UUID assigneeId,
               @NotNull UUID creatorId, Instant deadline) {
     id = UUID.randomUUID();
+
+    archived = false;
 
     this.boardId = boardId;
     this.columnId = columnId;

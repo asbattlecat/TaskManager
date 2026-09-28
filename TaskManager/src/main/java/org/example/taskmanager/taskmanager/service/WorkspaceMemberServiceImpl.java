@@ -36,8 +36,7 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
   }
 
   @Override
-  public WorkspaceMemberDto createMember(UUID workspaceId, UUID userId, WorkspaceRole role)
-          throws NotFoundException, AlreadyExistsException {
+  public WorkspaceMemberDto createMember(UUID workspaceId, UUID userId, WorkspaceRole role) {
     userAndWorkspaceExists(userId, workspaceId);
     // workspace member должен быть уникален для workspace
     if (workspaceMemberRepository.
@@ -71,6 +70,15 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
     }
 
     return members.stream().map(workspaceMemberMapper::toDto).toList();
+  }
+
+  @Override
+  public WorkspaceMemberDto delete(UUID workspaceMemberId) {
+    WorkspaceMember member = workspaceMemberRepository.findById(workspaceMemberId)
+            .orElseThrow(() -> new NotFoundException("Member not found"));
+
+    workspaceMemberRepository.delete(member);
+    return workspaceMemberMapper.toDto(member);
   }
 
   private void userAndWorkspaceExists(UUID userId, UUID workspaceId) {

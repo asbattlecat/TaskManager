@@ -21,6 +21,9 @@ public class Workspace {
   @Id
   private UUID id;
 
+  @Column
+  private boolean archived;
+
   @Column(nullable = false)
   private String name;
 
@@ -39,6 +42,8 @@ public class Workspace {
 
   public Workspace(@NotNull String name, String description, @NotNull UUID ownerId) {
     id =  UUID.randomUUID();
+
+    archived = false;
 
     this.name = name;
     this.description = description;

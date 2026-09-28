@@ -28,7 +28,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserDto create(String name, String email, String password) {
-    if (userRepository.findByEmail(email).isPresent()) {
+    if (userRepository.existsByEmail(email)) {
       throw new AlreadyExistsException("User with email " + email + " already exists");
     }
 
@@ -54,8 +54,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserDto updatePassword(UUID userId, String oldPassword, String newPassword) {
-    User user = userRepository.findById(userId)
-            .orElseThrow(() -> new NotFoundException("User not found"));
+    User user = getUser(userId);
 
     String hashedOldPassword = passwordHasher.encode(oldPassword);
     if (!passwordHasher.matches(user.getHashedPassword(), hashedOldPassword)) {
@@ -72,8 +71,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserDto activate(UUID userId) {
-    User user = userRepository.findById(userId)
-            .orElseThrow(() -> new NotFoundException("User not found"));
+    User user = getUser(userId);
 
     if (user.isActive()) {
       throw new  InvalidCredentialsException("User already activated");
@@ -86,8 +84,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserDto deactivate(UUID userId) {
-    User user = userRepository.findById(userId)
-            .orElseThrow(() -> new NotFoundException("User not found"));
+    User user = getUser(userId);
 
     if (!user.isActive()) {
       throw new  InvalidCredentialsException("User already deactivated");
@@ -100,17 +97,15 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserDto delete(UUID id) {
-    User user = userRepository.findById(id)
-                    .orElseThrow(() -> new NotFoundException("User not found"));
+    User user = getUser(id);
 
-    userRepository.deleteById(id);
+    userRepository.delete(user);
     return userMapper.toDto(user);
   }
 
   @Override
   public UserDto getById(UUID id) {
-    User user = userRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("User not found"));
+    User user = getUser(id);
 
     return userMapper.toDto(user);
   }
@@ -121,5 +116,10 @@ public class UserServiceImpl implements UserService {
             .orElseThrow(() -> new NotFoundException("User not found"));
 
     return userMapper.toDto(user);
+  }
+
+  private User getUser(UUID userId) {
+    return userRepository.findById(userId)
+            .orElseThrow(() -> new NotFoundException("User not found"));
   }
 }

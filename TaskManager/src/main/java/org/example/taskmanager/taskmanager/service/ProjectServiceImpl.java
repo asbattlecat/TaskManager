@@ -38,8 +38,9 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public ProjectDto create(UUID workspaceId, String name, String description) {
-    workspaceRepository.findById(workspaceId)
-            .orElseThrow(() -> new NotFoundException("Workspace not found"));
+    if (!workspaceRepository.existsById(workspaceId)) {
+      throw new NotFoundException("Workspace not found"));
+    }
 
     Project project = new Project(workspaceId, name, description);
     projectRepository.save(project);
@@ -49,8 +50,7 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public ProjectDto archive(UUID projectId) {
-    Project  project = projectRepository.findById(projectId)
-            .orElseThrow(() -> new NotFoundException("Project not found"));
+    Project project = getProject(projectId);
 
     project.setArchived(true);
     projectRepository.save(project);
@@ -60,8 +60,7 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public ProjectDto unarchive(UUID projectId) {
-    Project project = projectRepository.findById(projectId)
-                    .orElseThrow(() -> new NotFoundException("Project not found"));
+    Project project = getProject(projectId);
 
     project.setArchived(false);
     projectRepository.save(project);
@@ -81,8 +80,7 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public ProjectDto changeName(UUID projectId, String newName) {
-    Project project = projectRepository.findById(projectId)
-                    .orElseThrow(() -> new NotFoundException("Project not found"));
+    Project project = getProject(projectId);
 
     project.setName(newName);
     projectRepository.save(project);
@@ -92,12 +90,16 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public ProjectDto changeDescription(UUID projectId, String newDescription) {
-    Project project = projectRepository.findById(projectId)
-                    .orElseThrow(() -> new NotFoundException("Project not found"));
+    Project project = getProject(projectId);
 
     project.setDescription(newDescription);
     projectRepository.save(project);
 
     return projectMapper.toDto(project);
+  }
+
+  private Project getProject(UUID projectId) {
+    return projectRepository.findById(projectId)
+            .orElseThrow(() -> new NotFoundException("Project not found"));
   }
 }

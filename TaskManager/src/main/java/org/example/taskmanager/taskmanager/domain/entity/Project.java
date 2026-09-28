@@ -36,7 +36,7 @@ public class Project {
   @Column
   private Instant updatedAt;
 
-  @Column(nullable = false)
+  @Column
   private boolean archived;
 
   public Project(@NotNull UUID workspaceId, @NotNull String name, String description) {

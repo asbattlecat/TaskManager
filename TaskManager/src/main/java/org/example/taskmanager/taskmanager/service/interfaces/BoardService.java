@@ -10,6 +10,8 @@ import java.util.UUID;
 
 public interface BoardService {
   BoardDto create(UUID projectId, String name, String description, BoardType boardType);
+  BoardDto archive(UUID boardId);
+  BoardDto unarchive(UUID boardId);
   List<TaskDto> getTasks(UUID projectId);
   BoardColumnDto changeColumnName(UUID columnId, String newName);
   List<BoardColumnDto> changeColumnPosition(UUID boardId, Integer oldPosition, Integer newPosition);

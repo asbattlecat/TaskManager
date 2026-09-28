@@ -39,6 +39,30 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   }
 
   @Override
+  public WorkspaceDto archive(UUID workspaceId) {
+    Workspace workspace = getWorkspace(workspaceId);
+
+    if (!workspace.isArchived()) {
+      workspace.setArchived(true);
+      workspaceRepository.save(workspace);
+    }
+
+    return workspaceMapper.toDto(workspace);
+  }
+
+  @Override
+  public WorkspaceDto unarchive(UUID workspaceId) {
+    Workspace workspace = getWorkspace(workspaceId);
+
+    if (workspace.isArchived()) {
+      workspace.setArchived(false);
+      workspaceRepository.save(workspace);
+    }
+
+    return workspaceMapper.toDto(workspace);
+  }
+
+  @Override
   public List<ProjectDto> getProjects(UUID workspaceId) {
     if (!workspaceRepository.existsById(workspaceId)) {
       throw new NotFoundException("Workspace not found");
@@ -54,8 +78,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
   @Override
   public WorkspaceDto changeName(UUID workspaceId, String newName) {
-    Workspace workspace = workspaceRepository.findById(workspaceId)
-            .orElseThrow(() -> new NotFoundException("Workspace not found"));
+    Workspace workspace = getWorkspace(workspaceId);
 
     workspace.setName(newName);
     workspaceRepository.save(workspace);
@@ -65,12 +88,16 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
   @Override
   public WorkspaceDto changeDescription(UUID workspaceId, String newDescription) {
-    Workspace workspace = workspaceRepository.findById(workspaceId)
-            .orElseThrow(() -> new NotFoundException("Workspace not found"));
+    Workspace workspace = getWorkspace(workspaceId);
 
     workspace.setDescription(newDescription);
     workspaceRepository.save(workspace);
 
     return workspaceMapper.toDto(workspace);
+  }
+
+  private Workspace getWorkspace(UUID workspaceId) {
+    return workspaceRepository.findById(workspaceId)
+            .orElseThrow(() -> new NotFoundException("Workspace not found"));
   }
 }
