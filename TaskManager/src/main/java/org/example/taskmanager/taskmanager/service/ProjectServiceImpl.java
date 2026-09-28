@@ -4,7 +4,7 @@ import org.example.taskmanager.taskmanager.controller.dto.BoardDto;
 import org.example.taskmanager.taskmanager.controller.dto.ProjectDto;
 import org.example.taskmanager.taskmanager.domain.entity.Board;
 import org.example.taskmanager.taskmanager.domain.entity.Project;
-import org.example.taskmanager.taskmanager.infrastructure.exceptions.NotFoundException;
+import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.mapper.BoardMapper;
 import org.example.taskmanager.taskmanager.mapper.ProjectMapper;
 import org.example.taskmanager.taskmanager.repository.BoardRepository;
@@ -14,7 +14,6 @@ import org.example.taskmanager.taskmanager.service.interfaces.ProjectService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service

@@ -7,7 +7,7 @@ import org.example.taskmanager.taskmanager.domain.entity.Board;
 import org.example.taskmanager.taskmanager.domain.entity.BoardColumn;
 import org.example.taskmanager.taskmanager.domain.entity.Task;
 import org.example.taskmanager.taskmanager.domain.enums.BoardType;
-import org.example.taskmanager.taskmanager.infrastructure.exceptions.NotFoundException;
+import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.mapper.BoardColumnMapper;
 import org.example.taskmanager.taskmanager.mapper.BoardMapper;
 import org.example.taskmanager.taskmanager.mapper.TaskMapper;

@@ -1,4 +1,4 @@
-package org.example.taskmanager.taskmanager.infrastructure.exceptions;
+package org.example.taskmanager.taskmanager.infrastructure.exception;
 
 public class AlreadyExistsException extends RuntimeException {
   public AlreadyExistsException(String message) {

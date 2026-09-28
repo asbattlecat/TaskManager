@@ -4,7 +4,7 @@ import org.example.taskmanager.taskmanager.controller.dto.ProjectDto;
 import org.example.taskmanager.taskmanager.controller.dto.WorkspaceDto;
 import org.example.taskmanager.taskmanager.domain.entity.Project;
 import org.example.taskmanager.taskmanager.domain.entity.Workspace;
-import org.example.taskmanager.taskmanager.infrastructure.exceptions.NotFoundException;
+import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.mapper.ProjectMapper;
 import org.example.taskmanager.taskmanager.mapper.WorkspaceMapper;
 import org.example.taskmanager.taskmanager.repository.ProjectRepository;
@@ -45,6 +45,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     if (!workspace.isArchived()) {
       workspace.setArchived(true);
       workspaceRepository.save(workspace);
+    } else {
+      throw new IllegalStateException("Workspace is already archived");
     }
 
     return workspaceMapper.toDto(workspace);
@@ -57,6 +59,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     if (workspace.isArchived()) {
       workspace.setArchived(false);
       workspaceRepository.save(workspace);
+    } else {
+      throw new IllegalStateException("Workspace is already unarchived");
     }
 
     return workspaceMapper.toDto(workspace);

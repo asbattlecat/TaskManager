@@ -2,16 +2,15 @@ package org.example.taskmanager.taskmanager.service;
 
 import org.example.taskmanager.taskmanager.controller.dto.UserDto;
 import org.example.taskmanager.taskmanager.domain.entity.User;
-import org.example.taskmanager.taskmanager.infrastructure.exceptions.AlreadyExistsException;
-import org.example.taskmanager.taskmanager.infrastructure.exceptions.InvalidCredentialsException;
-import org.example.taskmanager.taskmanager.infrastructure.exceptions.NotFoundException;
+import org.example.taskmanager.taskmanager.infrastructure.exception.AlreadyExistsException;
+import org.example.taskmanager.taskmanager.infrastructure.exception.InvalidCredentialsException;
+import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.infrastructure.security.PasswordHasher;
 import org.example.taskmanager.taskmanager.mapper.UserMapper;
 import org.example.taskmanager.taskmanager.repository.UserRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.UserService;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @Service

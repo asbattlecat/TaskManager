@@ -8,7 +8,7 @@ import org.example.taskmanager.taskmanager.domain.entity.*;
 import org.example.taskmanager.taskmanager.domain.enums.TagColor;
 import org.example.taskmanager.taskmanager.domain.enums.TaskPriority;
 import org.example.taskmanager.taskmanager.domain.enums.TaskStatus;
-import org.example.taskmanager.taskmanager.infrastructure.exceptions.NotFoundException;
+import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.infrastructure.specification.TaskSpecification;
 import org.example.taskmanager.taskmanager.mapper.AuditEntityMapper;
 import org.example.taskmanager.taskmanager.mapper.CommentMapper;

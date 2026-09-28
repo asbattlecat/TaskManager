@@ -1,11 +1,10 @@
 package org.example.taskmanager.taskmanager.service;
 
-import jakarta.validation.constraints.NotNull;
 import org.example.taskmanager.taskmanager.controller.dto.*;
 import org.example.taskmanager.taskmanager.domain.entity.WorkspaceMember;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceRole;
-import org.example.taskmanager.taskmanager.infrastructure.exceptions.AlreadyExistsException;
-import org.example.taskmanager.taskmanager.infrastructure.exceptions.NotFoundException;
+import org.example.taskmanager.taskmanager.infrastructure.exception.AlreadyExistsException;
+import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.mapper.WorkspaceMemberMapper;
 import org.example.taskmanager.taskmanager.repository.UserRepository;
 import org.example.taskmanager.taskmanager.repository.WorkspaceMemberRepository;
@@ -14,7 +13,6 @@ import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceMemberSer
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 
