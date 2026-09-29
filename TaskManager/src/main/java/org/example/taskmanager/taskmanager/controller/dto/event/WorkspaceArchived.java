@@ -4,5 +4,5 @@ import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 
 import java.util.UUID;
 
-public record WorkspaceArchived(UUID workspaceId, ArchiveReason reason) {
+public record WorkspaceArchived(UUID workspaceId, ArchiveReason reason) implements DomainEvent {
 }

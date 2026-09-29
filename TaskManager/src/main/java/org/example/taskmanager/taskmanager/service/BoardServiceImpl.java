@@ -3,10 +3,15 @@ package org.example.taskmanager.taskmanager.service;
 import org.example.taskmanager.taskmanager.controller.dto.BoardColumnDto;
 import org.example.taskmanager.taskmanager.controller.dto.BoardDto;
 import org.example.taskmanager.taskmanager.controller.dto.TaskDto;
+import org.example.taskmanager.taskmanager.controller.dto.event.DomainEvent;
 import org.example.taskmanager.taskmanager.domain.entity.Board;
 import org.example.taskmanager.taskmanager.domain.entity.BoardColumn;
 import org.example.taskmanager.taskmanager.domain.entity.Task;
+import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
+import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.BoardType;
+import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
+import org.example.taskmanager.taskmanager.infrastructure.event.DomainEventPublisher;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.mapper.BoardColumnMapper;
 import org.example.taskmanager.taskmanager.mapper.BoardMapper;
@@ -32,9 +37,12 @@ public class BoardServiceImpl implements BoardService {
   private final BoardColumnMapper boardColumnMapper;
   private final TaskMapper taskMapper;
 
+  private final DomainEventPublisher  domainEventPublisher;
+
   public  BoardServiceImpl(ProjectRepository projectRepository, TaskRepository taskRepository,
                            BoardColumnRepository boardColumnRepository, BoardRepository boardRepository,
-                           BoardMapper boardMapper, BoardColumnMapper boardColumnMapper, TaskMapper taskMapper) {
+                           BoardMapper boardMapper, BoardColumnMapper boardColumnMapper, TaskMapper taskMapper,
+                           DomainEventPublisher domainEventPublisher) {
     this.projectRepository = projectRepository;
     this.taskRepository = taskRepository;
     this.boardRepository = boardRepository;
@@ -42,6 +50,8 @@ public class BoardServiceImpl implements BoardService {
     this.boardMapper = boardMapper;
     this.boardColumnMapper = boardColumnMapper;
     this.taskMapper = taskMapper;
+
+    this.domainEventPublisher = domainEventPublisher;
   }
 
   @Override
@@ -56,27 +66,38 @@ public class BoardServiceImpl implements BoardService {
   }
 
   @Override
-  public BoardDto archive(UUID boardId) {
+  public BoardDto archive(UUID boardId, ArchiveReason reason) {
     Board board = boardRepository.findById(boardId)
             .orElseThrow(() -> new NotFoundException("Board not found"));
 
-    if (!board.isArchived()) {
-      board.setArchived(true);
-      boardRepository.save(board);
-    }
+    if (board.getArchiveState() != ArchiveState.ACTIVE)
+      throw new IllegalArgumentException("Board is already archived");
+
+    board.archive(reason);
+    List<DomainEvent> events = board.getEvents();
+    board.clearEvents();
+    boardRepository.save(board);
+
+    events.forEach(domainEventPublisher::publish);
 
     return boardMapper.toDto(board);
   }
 
   @Override
-  public BoardDto unarchive(UUID boardId) {
+  public BoardDto unarchive(UUID boardId, UnarchiveReason reason) {
     Board board = boardRepository.findById(boardId)
             .orElseThrow(() -> new NotFoundException("Board not found"));
 
-    if (board.isArchived()) {
-      board.setArchived(false);
-      boardRepository.save(board);
-    }
+    if (board.getArchiveState() == ArchiveState.ACTIVE)
+      throw new IllegalArgumentException("Board is already active");
+
+    board.unarchive(reason);
+    List<DomainEvent> events = board.getEvents();
+    board.clearEvents();
+    boardRepository.save(board);
+
+    events.forEach(domainEventPublisher::publish);
+
 
     return boardMapper.toDto(board);
   }

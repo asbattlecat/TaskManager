@@ -1,6 +1,7 @@
 package org.example.taskmanager.taskmanager.domain.enums;
 
-public enum ArchiveReason {
-  USER_ACTION,
+public enum ArchiveState {
+  ACTIVE,
+  USER_ARCHIVED,
   PARENT_ARCHIVED
 }

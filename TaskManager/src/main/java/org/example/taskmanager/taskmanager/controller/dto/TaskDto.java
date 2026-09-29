@@ -1,6 +1,7 @@
 package org.example.taskmanager.taskmanager.controller.dto;
 
 import jakarta.validation.constraints.NotNull;
+import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.TaskPriority;
 import org.example.taskmanager.taskmanager.domain.enums.TaskStatus;
 
@@ -9,7 +10,7 @@ import java.util.UUID;
 
 public record TaskDto(
         @NotNull UUID id,
-        boolean archived,
+        @NotNull ArchiveState archiveState,
         @NotNull  UUID boardId,
         UUID columnId,
         @NotNull String name,

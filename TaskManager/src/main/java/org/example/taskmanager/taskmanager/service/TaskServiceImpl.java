@@ -4,10 +4,10 @@ import org.example.taskmanager.taskmanager.controller.dto.AuditEntityDto;
 import org.example.taskmanager.taskmanager.controller.dto.CommentDto;
 import org.example.taskmanager.taskmanager.controller.dto.TagDto;
 import org.example.taskmanager.taskmanager.controller.dto.TaskDto;
+import org.example.taskmanager.taskmanager.controller.dto.event.DomainEvent;
 import org.example.taskmanager.taskmanager.domain.entity.*;
-import org.example.taskmanager.taskmanager.domain.enums.TagColor;
-import org.example.taskmanager.taskmanager.domain.enums.TaskPriority;
-import org.example.taskmanager.taskmanager.domain.enums.TaskStatus;
+import org.example.taskmanager.taskmanager.domain.enums.*;
+import org.example.taskmanager.taskmanager.infrastructure.event.DomainEventPublisher;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.infrastructure.specification.TaskSpecification;
 import org.example.taskmanager.taskmanager.mapper.AuditEntityMapper;
@@ -39,12 +39,14 @@ public class TaskServiceImpl implements TaskService {
   private final CommentMapper commentMapper;
   private final AuditEntityMapper auditEntityMapper;
 
+  private final DomainEventPublisher domainEventPublisher;
+
   public  TaskServiceImpl(TaskRepository taskRepository,
                           BoardColumnRepository boardColumnRepository, CommentRepository commentRepository,
                           AuditEntityRepository auditEntityRepository,
                           TagRepository tagRepository, WorkspaceAccessChecker workspaceAccessChecker,
                           TaskMapper taskMapper, TagMapper tagMapper, CommentMapper commentMapper,
-                          AuditEntityMapper auditEntityMapper) {
+                          AuditEntityMapper auditEntityMapper, DomainEventPublisher domainEventPublisher) {
     this.taskRepository = taskRepository;
     this.boardColumnRepository = boardColumnRepository;
     this.commentRepository = commentRepository;
@@ -55,6 +57,7 @@ public class TaskServiceImpl implements TaskService {
     this.tagMapper = tagMapper;
     this.commentMapper = commentMapper;
     this.auditEntityMapper = auditEntityMapper;
+    this.domainEventPublisher = domainEventPublisher;
   }
 
 
@@ -72,27 +75,37 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
-  public TaskDto archive(UUID taskId) {
+  public TaskDto archive(UUID taskId, ArchiveReason reason) {
     Task task = getTask(taskId);
 
-    if (!task.isArchived()) {
-      task.setArchived(true);
-      taskRepository.save(task);
-    }
+    if (task.getArchiveState() != ArchiveState.ACTIVE)
+      throw new IllegalArgumentException("Task is already archived");
+
+    task.archive(reason);
+    List<DomainEvent> events = task.getEvents();
+    task.clearEvents();
+    taskRepository.save(task);
+
+    events.forEach(domainEventPublisher::publish);
 
     return  taskMapper.toDto(task);
   }
 
   @Override
-  public TaskDto unarchive(UUID taskId) {
+  public TaskDto unarchive(UUID taskId, UnarchiveReason reason) {
     Task task = getTask(taskId);
 
-    if (task.isArchived()) {
-      task.setArchived(false);
-      taskRepository.save(task);
-    }
+    if (task.getArchiveState() == ArchiveState.ACTIVE)
+      throw new IllegalArgumentException("Task is already active");
 
-    return  taskMapper.toDto(task);
+    task.unarchive(reason);
+    List<DomainEvent> events = task.getEvents();
+    task.clearEvents();
+    taskRepository.save(task);
+
+    events.forEach(domainEventPublisher::publish);
+
+    return taskMapper.toDto(task);
   }
 
   @Override

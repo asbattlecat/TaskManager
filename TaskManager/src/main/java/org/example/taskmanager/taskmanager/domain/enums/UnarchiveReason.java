@@ -1,6 +1,6 @@
 package org.example.taskmanager.taskmanager.domain.enums;
 
-public enum ArchiveReason {
+public enum UnarchiveReason {
   USER_ACTION,
-  PARENT_ARCHIVED
+  CASCADE
 }

@@ -9,26 +9,24 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.example.taskmanager.taskmanager.controller.dto.event.WorkspaceArchived;
 import org.example.taskmanager.taskmanager.controller.dto.event.WorkspaceUnarchived;
+import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
+import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
+import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
-public class Workspace {
+public class Workspace extends AggregateRoot {
   @Id
   private UUID id;
 
-  @Column
-  private boolean archived;
-
   @Column(nullable = false)
-  private ArchiveReason archiveReason;
+  private ArchiveState archiveState;
 
   @Column(nullable = false)
   private String name;
@@ -49,8 +47,7 @@ public class Workspace {
   public Workspace(@NotNull String name, String description, @NotNull UUID ownerId) {
     id =  UUID.randomUUID();
 
-    archived = false;
-    archiveReason = ArchiveReason.NONE;
+    archiveState = ArchiveState.ACTIVE;
 
     this.name = name;
     this.description = description;
@@ -59,25 +56,27 @@ public class Workspace {
     this.createdAt = Instant.now();
   }
 
-  public WorkspaceArchived archive(@NotNull ArchiveReason reason) {
-    if (archived) {
-      throw new IllegalStateException("Cannot archive twice");
+  public void archive(@NotNull ArchiveReason reason) {
+    if (archiveState != ArchiveState.ACTIVE) {
+      throw new IllegalStateException("Workspace is already archived");
     }
 
-    archived = true;
-    archiveReason = reason;
+    if (reason == ArchiveReason.USER_ACTION) {
+      archiveState = ArchiveState.USER_ARCHIVED;
+    } else {
+      archiveState = ArchiveState.PARENT_ARCHIVED;
+    }
 
-    return new WorkspaceArchived(id, reason);
+    registerEvent(new WorkspaceArchived(id, reason));
   }
 
-  public WorkspaceUnarchived unarchive() {
-    if (!archived) {
-      throw new IllegalStateException("Cannot unarchive twice");
+  public void unarchive(@NotNull UnarchiveReason reason) {
+    if (archiveState == ArchiveState.ACTIVE) {
+      throw new IllegalStateException("Workspace is already active");
     }
 
-    archived = false;
-    archiveReason = ArchiveReason.NONE;
+    archiveState = ArchiveState.ACTIVE;
 
-    return new WorkspaceUnarchived(id);
+    registerEvent(new WorkspaceUnarchived(id, reason));
   }
 }

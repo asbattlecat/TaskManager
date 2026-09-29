@@ -4,5 +4,5 @@ import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 
 import java.util.UUID;
 
-public record BoardArchived(UUID boardId, ArchiveReason reason) {
+public record BoardArchived(UUID boardId, ArchiveReason reason) implements DomainEvent {
 }

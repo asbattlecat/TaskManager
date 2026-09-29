@@ -1,13 +1,14 @@
 package org.example.taskmanager.taskmanager.controller.dto;
 
 import jakarta.validation.constraints.NotNull;
+import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.BoardType;
 
 import java.time.Instant;
 import java.util.UUID;
 
 public record BoardDto(@NotNull UUID id,
-                       boolean archived,
+                       @NotNull ArchiveState archiveState,
                        @NotNull UUID projectId,
                        @NotNull String name,
                        String description,

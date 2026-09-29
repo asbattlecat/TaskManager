@@ -5,9 +5,7 @@ import org.example.taskmanager.taskmanager.controller.dto.CommentDto;
 import org.example.taskmanager.taskmanager.controller.dto.TagDto;
 import org.example.taskmanager.taskmanager.controller.dto.TaskDto;
 import org.example.taskmanager.taskmanager.domain.entity.Tag;
-import org.example.taskmanager.taskmanager.domain.enums.TagColor;
-import org.example.taskmanager.taskmanager.domain.enums.TaskPriority;
-import org.example.taskmanager.taskmanager.domain.enums.TaskStatus;
+import org.example.taskmanager.taskmanager.domain.enums.*;
 
 import java.time.Instant;
 import java.util.List;
@@ -16,8 +14,8 @@ import java.util.UUID;
 public interface TaskService {
   TaskDto create(UUID boardId, UUID columnId, String name, String description, TaskStatus status,
                  TaskPriority priority, UUID assigneeId, UUID creatorId, Instant deadline);
-  TaskDto archive(UUID taskId);
-  TaskDto unarchive(UUID taskId);
+  TaskDto archive(UUID taskId, ArchiveReason archiveReason);
+  TaskDto unarchive(UUID taskId, UnarchiveReason reason);
   TaskDto changeName(UUID taskId, String newName, UUID userId);
   TaskDto changeDescription(UUID taskId, String newDescription, UUID userId);
   TaskDto changePriority(UUID taskId, TaskPriority newPriority, UUID userId);

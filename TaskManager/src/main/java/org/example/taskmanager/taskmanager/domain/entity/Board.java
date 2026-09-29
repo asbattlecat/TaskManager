@@ -7,27 +7,27 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.example.taskmanager.taskmanager.controller.dto.event.BoardArchived;
+import org.example.taskmanager.taskmanager.controller.dto.event.BoardUnarchived;
+import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
+import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.BoardType;
+import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @Entity
-public class Board {
+public class Board extends AggregateRoot {
   @Id
   private UUID id;
 
-  @Column
-  private boolean archived;
-
   @Column(nullable = false)
-  private ArchiveReason archiveReason;
+  private ArchiveState archiveState;
 
   @Column(nullable = false)
   private UUID projectId;
@@ -50,8 +50,7 @@ public class Board {
   public Board(@NotNull UUID projectId, @NotNull String name, String description, @NotNull BoardType type) {
     id = UUID.randomUUID();
 
-    archived = false;
-    archiveReason = ArchiveReason.NONE;
+    archiveState = ArchiveState.ACTIVE;
 
     this.projectId = projectId;
     this.name = name;
@@ -59,5 +58,29 @@ public class Board {
     this.type = type;
 
     createdAt = Instant.now();
+  }
+
+  public void archive(ArchiveReason reason) {
+    if (archiveState != ArchiveState.ACTIVE) {
+      throw new IllegalStateException("Board is already archived");
+    }
+
+    if (reason == ArchiveReason.USER_ACTION) {
+      archiveState = ArchiveState.USER_ARCHIVED;
+    } else {
+      archiveState = ArchiveState.PARENT_ARCHIVED;
+    }
+
+    registerEvent(new BoardArchived(id, reason));
+  }
+
+  public void unarchive(UnarchiveReason reason) {
+    if (archiveState == ArchiveState.ACTIVE) {
+      throw new IllegalStateException("Board is already active");
+    }
+
+    archiveState = ArchiveState.ACTIVE;
+
+    registerEvent(new BoardUnarchived(id, reason));
   }
 }

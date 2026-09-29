@@ -5,28 +5,24 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
-import org.example.taskmanager.taskmanager.domain.enums.TaskPriority;
-import org.example.taskmanager.taskmanager.domain.enums.TaskStatus;
+import org.example.taskmanager.taskmanager.controller.dto.event.TaskArchived;
+import org.example.taskmanager.taskmanager.controller.dto.event.TaskUnarchived;
+import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
+import org.example.taskmanager.taskmanager.domain.enums.*;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @Entity
-public class Task {
+public class Task extends AggregateRoot {
   @Id
   private UUID id;
 
-  @Column
-  private boolean archived;
-
   @Column(nullable = false)
-  private ArchiveReason archiveReason;
+  private ArchiveState archiveState;
 
   @Column(nullable = false)
   private UUID boardId;
@@ -70,8 +66,7 @@ public class Task {
               @NotNull UUID creatorId, Instant deadline) {
     id = UUID.randomUUID();
 
-    archived = false;
-    archiveReason = ArchiveReason.NONE;
+    archiveState = ArchiveState.ACTIVE;
 
     this.boardId = boardId;
     this.columnId = columnId;
@@ -84,5 +79,29 @@ public class Task {
     this.deadline = deadline;
 
     createdAt = Instant.now();
+  }
+
+  public void archive(ArchiveReason reason) {
+    if (archiveState != ArchiveState.ACTIVE) {
+      throw new IllegalStateException("Task is already archived");
+    }
+
+    if (reason == ArchiveReason.USER_ACTION) {
+      archiveState = ArchiveState.USER_ARCHIVED;
+    } else {
+      archiveState = ArchiveState.PARENT_ARCHIVED;
+    }
+
+    registerEvent(new TaskArchived(id, reason));
+  }
+
+  public void unarchive(UnarchiveReason reason) {
+    if (archiveState == ArchiveState.ACTIVE) {
+      throw new IllegalStateException("Task is already active");
+    }
+
+    archiveState = ArchiveState.ACTIVE;
+
+    registerEvent(new TaskUnarchived(id, reason));
   }
 }
