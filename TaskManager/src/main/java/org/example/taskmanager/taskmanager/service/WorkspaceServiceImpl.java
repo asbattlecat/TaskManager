@@ -1,8 +1,8 @@
 package org.example.taskmanager.taskmanager.service;
 
-import org.example.taskmanager.taskmanager.controller.dto.ProjectDto;
-import org.example.taskmanager.taskmanager.controller.dto.WorkspaceDto;
-import org.example.taskmanager.taskmanager.controller.dto.event.DomainEvent;
+import org.example.taskmanager.taskmanager.controller.dto.response.ProjectDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.WorkspaceDto;
+import org.example.taskmanager.taskmanager.infrastructure.event.DomainEvent;
 import org.example.taskmanager.taskmanager.domain.entity.Project;
 import org.example.taskmanager.taskmanager.domain.entity.Workspace;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;

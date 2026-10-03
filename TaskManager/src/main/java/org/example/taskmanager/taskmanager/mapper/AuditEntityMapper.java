@@ -1,6 +1,6 @@
 package org.example.taskmanager.taskmanager.mapper;
 
-import org.example.taskmanager.taskmanager.controller.dto.AuditEntityDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.AuditEntityDto;
 import org.example.taskmanager.taskmanager.domain.entity.AuditEntity;
 import org.mapstruct.Mapper;
 

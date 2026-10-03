@@ -1,4 +1,4 @@
-package org.example.taskmanager.taskmanager.controller.dto;
+package org.example.taskmanager.taskmanager.controller.dto.response;
 
 import org.example.taskmanager.taskmanager.domain.entity.Tag;
 import org.example.taskmanager.taskmanager.domain.enums.TaskStatus;

@@ -1,9 +1,9 @@
 package org.example.taskmanager.taskmanager.service;
 
-import org.example.taskmanager.taskmanager.controller.dto.BoardColumnDto;
-import org.example.taskmanager.taskmanager.controller.dto.BoardDto;
-import org.example.taskmanager.taskmanager.controller.dto.TaskDto;
-import org.example.taskmanager.taskmanager.controller.dto.event.DomainEvent;
+import org.example.taskmanager.taskmanager.controller.dto.response.BoardColumnDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.BoardDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.TaskDto;
+import org.example.taskmanager.taskmanager.infrastructure.event.DomainEvent;
 import org.example.taskmanager.taskmanager.domain.entity.Board;
 import org.example.taskmanager.taskmanager.domain.entity.BoardColumn;
 import org.example.taskmanager.taskmanager.domain.entity.Task;

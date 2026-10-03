@@ -1,6 +1,6 @@
 package org.example.taskmanager.taskmanager.mapper;
 
-import org.example.taskmanager.taskmanager.controller.dto.BoardColumnDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.BoardColumnDto;
 import org.example.taskmanager.taskmanager.domain.entity.BoardColumn;
 import org.mapstruct.Mapper;
 

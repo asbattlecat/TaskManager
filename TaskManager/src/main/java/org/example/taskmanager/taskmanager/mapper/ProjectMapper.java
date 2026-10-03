@@ -1,6 +1,6 @@
 package org.example.taskmanager.taskmanager.mapper;
 
-import org.example.taskmanager.taskmanager.controller.dto.ProjectDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.ProjectDto;
 import org.example.taskmanager.taskmanager.domain.entity.Project;
 import org.mapstruct.Mapper;
 

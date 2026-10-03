@@ -1,6 +1,6 @@
 package org.example.taskmanager.taskmanager.mapper;
 
-import org.example.taskmanager.taskmanager.controller.dto.CommentDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.CommentDto;
 import org.example.taskmanager.taskmanager.domain.entity.Comment;
 import org.mapstruct.Mapper;
 

@@ -1,6 +1,6 @@
 package org.example.taskmanager.taskmanager.service;
 
-import org.example.taskmanager.taskmanager.controller.dto.UserDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.UserDto;
 import org.example.taskmanager.taskmanager.domain.entity.User;
 import org.example.taskmanager.taskmanager.infrastructure.exception.AlreadyExistsException;
 import org.example.taskmanager.taskmanager.infrastructure.exception.InvalidCredentialsException;

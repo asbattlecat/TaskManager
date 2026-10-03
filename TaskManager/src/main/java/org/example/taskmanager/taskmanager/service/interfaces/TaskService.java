@@ -1,9 +1,9 @@
 package org.example.taskmanager.taskmanager.service.interfaces;
 
-import org.example.taskmanager.taskmanager.controller.dto.AuditEntityDto;
-import org.example.taskmanager.taskmanager.controller.dto.CommentDto;
-import org.example.taskmanager.taskmanager.controller.dto.TagDto;
-import org.example.taskmanager.taskmanager.controller.dto.TaskDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.AuditEntityDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.CommentDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.TagDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.TaskDto;
 import org.example.taskmanager.taskmanager.domain.entity.Tag;
 import org.example.taskmanager.taskmanager.domain.enums.*;
 

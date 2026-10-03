@@ -1,6 +1,6 @@
 package org.example.taskmanager.taskmanager.domain.aggregate;
 
-import org.example.taskmanager.taskmanager.controller.dto.event.DomainEvent;
+import org.example.taskmanager.taskmanager.infrastructure.event.DomainEvent;
 
 import java.util.ArrayList;
 import java.util.List;

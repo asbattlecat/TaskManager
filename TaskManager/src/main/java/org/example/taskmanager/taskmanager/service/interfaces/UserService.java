@@ -1,6 +1,6 @@
 package org.example.taskmanager.taskmanager.service.interfaces;
 
-import org.example.taskmanager.taskmanager.controller.dto.UserDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.UserDto;
 
 import java.util.UUID;
 

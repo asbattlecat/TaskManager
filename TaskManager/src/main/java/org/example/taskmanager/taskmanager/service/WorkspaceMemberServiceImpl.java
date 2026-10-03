@@ -1,6 +1,6 @@
 package org.example.taskmanager.taskmanager.service;
 
-import org.example.taskmanager.taskmanager.controller.dto.*;
+import org.example.taskmanager.taskmanager.controller.dto.response.WorkspaceMemberDto;
 import org.example.taskmanager.taskmanager.domain.entity.WorkspaceMember;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceRole;
 import org.example.taskmanager.taskmanager.infrastructure.exception.AlreadyExistsException;

@@ -1,8 +1,8 @@
 package org.example.taskmanager.taskmanager.service.interfaces;
 
-import org.example.taskmanager.taskmanager.controller.dto.BoardColumnDto;
-import org.example.taskmanager.taskmanager.controller.dto.BoardDto;
-import org.example.taskmanager.taskmanager.controller.dto.TaskDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.BoardColumnDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.BoardDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.TaskDto;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.BoardType;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;

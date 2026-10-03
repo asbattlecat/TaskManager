@@ -1,10 +1,10 @@
 package org.example.taskmanager.taskmanager.service;
 
-import org.example.taskmanager.taskmanager.controller.dto.AuditEntityDto;
-import org.example.taskmanager.taskmanager.controller.dto.CommentDto;
-import org.example.taskmanager.taskmanager.controller.dto.TagDto;
-import org.example.taskmanager.taskmanager.controller.dto.TaskDto;
-import org.example.taskmanager.taskmanager.controller.dto.event.DomainEvent;
+import org.example.taskmanager.taskmanager.controller.dto.response.AuditEntityDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.CommentDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.TagDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.TaskDto;
+import org.example.taskmanager.taskmanager.infrastructure.event.DomainEvent;
 import org.example.taskmanager.taskmanager.domain.entity.*;
 import org.example.taskmanager.taskmanager.domain.enums.*;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEventPublisher;

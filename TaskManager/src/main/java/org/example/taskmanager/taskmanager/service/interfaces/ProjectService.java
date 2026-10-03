@@ -1,7 +1,7 @@
 package org.example.taskmanager.taskmanager.service.interfaces;
 
-import org.example.taskmanager.taskmanager.controller.dto.BoardDto;
-import org.example.taskmanager.taskmanager.controller.dto.ProjectDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.BoardDto;
+import org.example.taskmanager.taskmanager.controller.dto.response.ProjectDto;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
 

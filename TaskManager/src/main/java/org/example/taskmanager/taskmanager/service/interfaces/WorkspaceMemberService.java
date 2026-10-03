@@ -1,6 +1,6 @@
 package org.example.taskmanager.taskmanager.service.interfaces;
 
-import org.example.taskmanager.taskmanager.controller.dto.*;
+import org.example.taskmanager.taskmanager.controller.dto.response.WorkspaceMemberDto;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceRole;
 
 import java.util.List;
