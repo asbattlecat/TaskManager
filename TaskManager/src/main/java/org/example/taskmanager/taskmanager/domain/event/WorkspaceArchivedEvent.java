@@ -1,9 +1,9 @@
-package org.example.taskmanager.taskmanager.controller.dto.event;
+package org.example.taskmanager.taskmanager.domain.event;
 
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEvent;
 
 import java.util.UUID;
 
-public record WorkspaceArchived(UUID workspaceId, ArchiveReason reason) implements DomainEvent {
+public record WorkspaceArchivedEvent(UUID workspaceId, ArchiveReason reason) implements DomainEvent {
 }

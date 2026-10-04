@@ -7,8 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.example.taskmanager.taskmanager.controller.dto.event.WorkspaceArchived;
-import org.example.taskmanager.taskmanager.controller.dto.event.WorkspaceUnarchived;
+import org.example.taskmanager.taskmanager.domain.event.WorkspaceArchivedEvent;
+import org.example.taskmanager.taskmanager.domain.event.WorkspaceUnarchivedEvent;
 import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
@@ -67,7 +67,7 @@ public class Workspace extends AggregateRoot {
       archiveState = ArchiveState.PARENT_ARCHIVED;
     }
 
-    registerEvent(new WorkspaceArchived(id, reason));
+    registerEvent(new WorkspaceArchivedEvent(id, reason));
   }
 
   public void unarchive(@NotNull UnarchiveReason reason) {
@@ -75,8 +75,21 @@ public class Workspace extends AggregateRoot {
       throw new IllegalStateException("Workspace is already active");
     }
 
+    if (!canBeUnarchived(reason)) throw new IllegalStateException("Project cannot be unarchived");
+
     archiveState = ArchiveState.ACTIVE;
 
-    registerEvent(new WorkspaceUnarchived(id, reason));
+    registerEvent(new WorkspaceUnarchivedEvent(id, reason));
+  }
+
+  public boolean canBeUnarchived(UnarchiveReason reason) {
+    return switch (archiveState) {
+      case USER_ARCHIVED ->
+              reason == UnarchiveReason.USER_ACTION;
+      case PARENT_ARCHIVED ->
+              true;
+      case ACTIVE ->
+              false;
+    };
   }
 }

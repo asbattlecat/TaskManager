@@ -2,6 +2,7 @@ package org.example.taskmanager.taskmanager.service;
 
 import org.example.taskmanager.taskmanager.controller.dto.response.BoardDto;
 import org.example.taskmanager.taskmanager.controller.dto.response.ProjectDto;
+import org.example.taskmanager.taskmanager.domain.entity.Workspace;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEvent;
 import org.example.taskmanager.taskmanager.domain.entity.Board;
 import org.example.taskmanager.taskmanager.domain.entity.Project;
@@ -63,39 +64,75 @@ public class ProjectServiceImpl implements ProjectService {
       throw new IllegalArgumentException("Project is already archived");
 
     project.archive(reason);
-    List<DomainEvent> events = project.getEvents();
-    project.clearEvents();
     projectRepository.save(project);
-
-    // запускаем каскад по цепочке ниже
-    events.forEach(domainEventPublisher::publish);
+    project.getEvents().forEach(domainEventPublisher::publish);;
+    project.clearEvents();
 
     return projectMapper.toDto(project);
   }
 
   @Override
+  public List<ProjectDto> archiveByWorkspace(UUID workspaceId, ArchiveReason reason) {
+    List<Project> projects = projectRepository.findAllByWorkspaceId(workspaceId);
+
+    if (projects.isEmpty()) throw new NotFoundException("Projects not found");
+
+    for (Project project : projects) {
+      if (project.getArchiveState() == ArchiveState.ACTIVE) {
+        project.archive(reason);
+        projectRepository.save(project);
+        project.getEvents().forEach(domainEventPublisher::publish);;
+        project.clearEvents();
+      }
+    }
+
+    return projects.stream().map(projectMapper::toDto).toList();
+  }
+
+  @Override
   public ProjectDto unarchive(UUID projectId, UnarchiveReason reason) {
     Project project = getProject(projectId);
+    Workspace parent = workspaceRepository.findById(project.getWorkspaceId())
+            .orElseThrow(() -> new NotFoundException("Workspace not found"));
 
-    if (project.getArchiveState() == ArchiveState.ACTIVE)
-      throw new IllegalArgumentException("Project is already active");
+    if (parent.getArchiveState() != ArchiveState.ACTIVE)
+      throw new IllegalStateException("Cannot unarchive project because workspace is archived");
 
     project.unarchive(reason);
-    List<DomainEvent> events = project.getEvents();
-    project.clearEvents();
     projectRepository.save(project);
-
-    // запускаем каскад по цепочке ниже
-    events.forEach(domainEventPublisher::publish);
+    project.getEvents().forEach(domainEventPublisher::publish);
+    project.clearEvents();
 
     return projectMapper.toDto(project);
+  }
+
+  @Override
+  public List<ProjectDto> unarchiveByWorkspace(UUID workspaceId, UnarchiveReason reason) {
+    Workspace parent = workspaceRepository.findById(workspaceId)
+            .orElseThrow(() -> new NotFoundException("Workspace not found"));
+    List<Project> projects = projectRepository.findAllByWorkspaceId(workspaceId);
+    if (projects.isEmpty()) throw new NotFoundException("Projects not found");
+
+    if (parent.getArchiveState() != ArchiveState.ACTIVE)
+      throw new IllegalStateException("Cannot unarchive projects because workspace is archived");
+
+    for (Project project : projects) {
+      if (project.canBeUnarchived(reason)) {
+        project.unarchive(reason);
+        projectRepository.save(project);
+        project.getEvents().forEach(domainEventPublisher::publish);
+        project.clearEvents();
+      }
+    }
+
+    return projects.stream().map(projectMapper::toDto).toList();
   }
 
   @Override
   public List<BoardDto> getProjectBoards(UUID projectId) {
     List<Board> boards = boardRepository.findBoardsByProjectId(projectId);
     if (boards.isEmpty()) {
-      throw new NotFoundException("Project not found");
+      throw new NotFoundException("Boards not found");
     }
 
     return boards.stream().map(boardMapper::toDto).toList();

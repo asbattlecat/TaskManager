@@ -74,11 +74,9 @@ public class BoardServiceImpl implements BoardService {
       throw new IllegalArgumentException("Board is already archived");
 
     board.archive(reason);
-    List<DomainEvent> events = board.getEvents();
-    board.clearEvents();
     boardRepository.save(board);
-
-    events.forEach(domainEventPublisher::publish);
+    board.getEvents().forEach(domainEventPublisher::publish);
+    board.clearEvents();
 
     return boardMapper.toDto(board);
   }
@@ -92,12 +90,9 @@ public class BoardServiceImpl implements BoardService {
       throw new IllegalArgumentException("Board is already active");
 
     board.unarchive(reason);
-    List<DomainEvent> events = board.getEvents();
-    board.clearEvents();
     boardRepository.save(board);
-
-    events.forEach(domainEventPublisher::publish);
-
+    board.getEvents().forEach(domainEventPublisher::publish);
+    board.clearEvents();
 
     return boardMapper.toDto(board);
   }

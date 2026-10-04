@@ -58,12 +58,9 @@ public class WorkspaceServiceImpl implements WorkspaceService {
       throw new IllegalArgumentException("Workspace cannot be archived by cascade mechanics");
 
     workspace.archive(reason);
-    List<DomainEvent> events = workspace.getEvents();
-    workspace.clearEvents();
     workspaceRepository.save(workspace);
-
-    // запускаем каскад по цепочке ниже
-    events.forEach(domainEventPublisher::publish);
+    workspace.getEvents().forEach(domainEventPublisher::publish);
+    workspace.clearEvents();
 
     return workspaceMapper.toDto(workspace);
   }
@@ -78,12 +75,9 @@ public class WorkspaceServiceImpl implements WorkspaceService {
       throw new IllegalArgumentException("Workspace cannot be archived by cascade mechanics");
 
     workspace.unarchive(reason);
-    List<DomainEvent> events = workspace.getEvents();
-    workspace.clearEvents();
     workspaceRepository.save(workspace);
-
-    // запускаем каскад по цепочке ниже
-    events.forEach(domainEventPublisher::publish);
+    workspace.getEvents().forEach(domainEventPublisher::publish);
+    workspace.clearEvents();
 
     return workspaceMapper.toDto(workspace);
   }

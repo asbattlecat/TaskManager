@@ -1,5 +1,7 @@
 package org.example.taskmanager.taskmanager.domain.aggregate;
 
+import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
+import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEvent;
 
 import java.util.ArrayList;
@@ -13,7 +15,7 @@ public abstract class AggregateRoot {
   }
 
   public List<DomainEvent> getEvents() {
-    return events;
+    return List.copyOf(events);
   }
 
   public void clearEvents() {

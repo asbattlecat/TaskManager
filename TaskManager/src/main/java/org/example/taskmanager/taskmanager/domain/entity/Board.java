@@ -7,8 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.example.taskmanager.taskmanager.controller.dto.event.BoardArchived;
-import org.example.taskmanager.taskmanager.controller.dto.event.BoardUnarchived;
+import org.example.taskmanager.taskmanager.domain.event.BoardArchivedEvent;
+import org.example.taskmanager.taskmanager.domain.event.BoardUnarchivedEvent;
 import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
@@ -71,7 +71,7 @@ public class Board extends AggregateRoot {
       archiveState = ArchiveState.PARENT_ARCHIVED;
     }
 
-    registerEvent(new BoardArchived(id, reason));
+    registerEvent(new BoardArchivedEvent(id, reason));
   }
 
   public void unarchive(UnarchiveReason reason) {
@@ -81,6 +81,6 @@ public class Board extends AggregateRoot {
 
     archiveState = ArchiveState.ACTIVE;
 
-    registerEvent(new BoardUnarchived(id, reason));
+    registerEvent(new BoardUnarchivedEvent(id, reason));
   }
 }

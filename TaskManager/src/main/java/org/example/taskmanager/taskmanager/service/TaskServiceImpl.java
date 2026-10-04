@@ -82,11 +82,7 @@ public class TaskServiceImpl implements TaskService {
       throw new IllegalArgumentException("Task is already archived");
 
     task.archive(reason);
-    List<DomainEvent> events = task.getEvents();
-    task.clearEvents();
     taskRepository.save(task);
-
-    events.forEach(domainEventPublisher::publish);
 
     return  taskMapper.toDto(task);
   }
@@ -99,11 +95,9 @@ public class TaskServiceImpl implements TaskService {
       throw new IllegalArgumentException("Task is already active");
 
     task.unarchive(reason);
-    List<DomainEvent> events = task.getEvents();
-    task.clearEvents();
     taskRepository.save(task);
-
-    events.forEach(domainEventPublisher::publish);
+    task.getEvents().forEach(domainEventPublisher::publish);
+    task.clearEvents();
 
     return taskMapper.toDto(task);
   }

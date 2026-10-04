@@ -11,7 +11,9 @@ import java.util.UUID;
 public interface ProjectService {
   ProjectDto create(UUID workspaceId, String name, String description);
   ProjectDto archive(UUID projectId, ArchiveReason archiveReason);
+  List<ProjectDto> archiveByWorkspace(UUID workspaceId, ArchiveReason reason);
   ProjectDto unarchive(UUID projectId, UnarchiveReason reason);
+  List<ProjectDto> unarchiveByWorkspace(UUID workspaceId, UnarchiveReason reason);
   List<BoardDto> getProjectBoards(UUID projectId);
   ProjectDto changeName(UUID projectId, String newName);
   ProjectDto changeDescription(UUID projectId, String newDescription);
