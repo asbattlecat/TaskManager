@@ -5,5 +5,5 @@ import org.example.taskmanager.taskmanager.infrastructure.event.DomainEvent;
 
 import java.util.UUID;
 
-public record ProjectUnarchivedEvent(UUID projectId, UnarchiveReason unarchiveReason) implements DomainEvent {
+public record ProjectUnarchivedEvent(UUID projectId) implements DomainEvent {
 }

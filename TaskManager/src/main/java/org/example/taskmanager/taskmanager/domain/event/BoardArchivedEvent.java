@@ -5,5 +5,5 @@ import org.example.taskmanager.taskmanager.infrastructure.event.DomainEvent;
 
 import java.util.UUID;
 
-public record BoardArchivedEvent(UUID boardId, ArchiveReason reason) implements DomainEvent {
+public record BoardArchivedEvent(UUID boardId) implements DomainEvent {
 }
