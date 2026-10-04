@@ -3,7 +3,6 @@ package org.example.taskmanager.taskmanager.service;
 import org.example.taskmanager.taskmanager.controller.dto.response.BoardDto;
 import org.example.taskmanager.taskmanager.controller.dto.response.ProjectDto;
 import org.example.taskmanager.taskmanager.domain.entity.Workspace;
-import org.example.taskmanager.taskmanager.infrastructure.event.DomainEvent;
 import org.example.taskmanager.taskmanager.domain.entity.Board;
 import org.example.taskmanager.taskmanager.domain.entity.Project;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
@@ -48,7 +47,7 @@ public class ProjectServiceImpl implements ProjectService {
   @Override
   public ProjectDto create(UUID workspaceId, String name, String description) {
     if (!workspaceRepository.existsById(workspaceId))
-      throw new NotFoundException("Workspace not found");
+      throw new NotFoundException("Workspace with id " + workspaceId + " not found during Project create operation");
 
     Project project = new Project(workspaceId, name, description);
     projectRepository.save(project);
@@ -58,10 +57,7 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public ProjectDto archive(UUID projectId, ArchiveReason reason) {
-    Project project = getProject(projectId);
-
-    if (project.getArchiveState() != ArchiveState.ACTIVE)
-      throw new IllegalArgumentException("Project is already archived");
+    Project project = getProject(projectId, "archive");
 
     project.archive(reason);
     projectRepository.save(project);
@@ -75,7 +71,9 @@ public class ProjectServiceImpl implements ProjectService {
   public List<ProjectDto> archiveByWorkspace(UUID workspaceId, ArchiveReason reason) {
     List<Project> projects = projectRepository.findAllByWorkspaceId(workspaceId);
 
-    if (projects.isEmpty()) throw new NotFoundException("Projects not found");
+    if (projects.isEmpty())
+      throw new NotFoundException("Projects with workspaceId " + workspaceId
+            + " as parent not found during archiveByWorkspace operation");
 
     for (Project project : projects) {
       if (project.getArchiveState() == ArchiveState.ACTIVE) {
@@ -91,12 +89,14 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public ProjectDto unarchive(UUID projectId, UnarchiveReason reason) {
-    Project project = getProject(projectId);
+    Project project = getProject(projectId, "unarchive");
     Workspace parent = workspaceRepository.findById(project.getWorkspaceId())
-            .orElseThrow(() -> new NotFoundException("Workspace not found"));
+            .orElseThrow(() -> new NotFoundException("Workspace as parent of project with id "
+                    + projectId + " not found during unarchive operation"));
 
     if (parent.getArchiveState() != ArchiveState.ACTIVE)
-      throw new IllegalStateException("Cannot unarchive project because workspace is archived");
+      throw new IllegalStateException("Cannot unarchive project because workspace (parent) with id "
+              + project.getWorkspaceId() + " is archived");
 
     project.unarchive(reason);
     projectRepository.save(project);
@@ -109,12 +109,17 @@ public class ProjectServiceImpl implements ProjectService {
   @Override
   public List<ProjectDto> unarchiveByWorkspace(UUID workspaceId, UnarchiveReason reason) {
     Workspace parent = workspaceRepository.findById(workspaceId)
-            .orElseThrow(() -> new NotFoundException("Workspace not found"));
+            .orElseThrow(() -> new NotFoundException("Workspace with id "
+                    + workspaceId + " not found during unarchiveByWorkspace operation"));
+
     List<Project> projects = projectRepository.findAllByWorkspaceId(workspaceId);
-    if (projects.isEmpty()) throw new NotFoundException("Projects not found");
+    if (projects.isEmpty())
+      throw new NotFoundException("Projects not found by workspaceId "
+            + workspaceId + " during unarchiveByWorkspace operation");
 
     if (parent.getArchiveState() != ArchiveState.ACTIVE)
-      throw new IllegalStateException("Cannot unarchive projects because workspace is archived");
+      throw new IllegalStateException("Cannot unarchive projects because workspace (parent) with id "
+              + workspaceId + " is archived");
 
     for (Project project : projects) {
       if (project.canBeUnarchived(reason)) {
@@ -132,7 +137,7 @@ public class ProjectServiceImpl implements ProjectService {
   public List<BoardDto> getProjectBoards(UUID projectId) {
     List<Board> boards = boardRepository.findBoardsByProjectId(projectId);
     if (boards.isEmpty()) {
-      throw new NotFoundException("Boards not found");
+      throw new NotFoundException("Boards not found by projectId " + projectId + " during getProjectBoards operation");
     }
 
     return boards.stream().map(boardMapper::toDto).toList();
@@ -140,7 +145,7 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public ProjectDto changeName(UUID projectId, String newName) {
-    Project project = getProject(projectId);
+    Project project = getProject(projectId, "change name");
 
     project.setName(newName);
     projectRepository.save(project);
@@ -150,7 +155,7 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public ProjectDto changeDescription(UUID projectId, String newDescription) {
-    Project project = getProject(projectId);
+    Project project = getProject(projectId, "change description");
 
     project.setDescription(newDescription);
     projectRepository.save(project);
@@ -158,8 +163,10 @@ public class ProjectServiceImpl implements ProjectService {
     return projectMapper.toDto(project);
   }
 
-  private Project getProject(UUID projectId) {
+  private Project getProject(UUID projectId, String operationName) {
     return projectRepository.findById(projectId)
-            .orElseThrow(() -> new NotFoundException("Project not found"));
+            .orElseThrow(() -> new NotFoundException("Project with id "
+                    + projectId + " not found during "
+                    + operationName + "operation"));
   }
 }

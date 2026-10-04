@@ -3,6 +3,7 @@ package org.example.taskmanager.taskmanager.service;
 import org.example.taskmanager.taskmanager.controller.dto.response.BoardColumnDto;
 import org.example.taskmanager.taskmanager.controller.dto.response.BoardDto;
 import org.example.taskmanager.taskmanager.controller.dto.response.TaskDto;
+import org.example.taskmanager.taskmanager.domain.entity.Project;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEvent;
 import org.example.taskmanager.taskmanager.domain.entity.Board;
 import org.example.taskmanager.taskmanager.domain.entity.BoardColumn;
@@ -56,9 +57,9 @@ public class BoardServiceImpl implements BoardService {
 
   @Override
   public BoardDto create(UUID projectId, String name, String description, BoardType boardType) {
-    if (!projectRepository.existsById(projectId)) {
-      throw new NotFoundException("Project not found");
-    }
+    if (!projectRepository.existsById(projectId))
+      throw new NotFoundException("Project with id "
+              + projectId + " not found during board create operation");
 
     Board board = new Board(projectId, name, description, boardType);
 
@@ -67,11 +68,7 @@ public class BoardServiceImpl implements BoardService {
 
   @Override
   public BoardDto archive(UUID boardId, ArchiveReason reason) {
-    Board board = boardRepository.findById(boardId)
-            .orElseThrow(() -> new NotFoundException("Board not found"));
-
-    if (board.getArchiveState() != ArchiveState.ACTIVE)
-      throw new IllegalArgumentException("Board is already archived");
+    Board board = getBoard(boardId, "archive");
 
     board.archive(reason);
     boardRepository.save(board);
@@ -82,12 +79,34 @@ public class BoardServiceImpl implements BoardService {
   }
 
   @Override
-  public BoardDto unarchive(UUID boardId, UnarchiveReason reason) {
-    Board board = boardRepository.findById(boardId)
-            .orElseThrow(() -> new NotFoundException("Board not found"));
+  public List<BoardDto> archiveByProject(UUID projectId, ArchiveReason reason) {
+    List<Board> boards = boardRepository.findBoardsByProjectId(projectId);
+    if (boards.isEmpty())
+      throw new NotFoundException("Boards with projectId " + projectId
+              + " as parent not found during archiveByProject operation");
 
-    if (board.getArchiveState() == ArchiveState.ACTIVE)
-      throw new IllegalArgumentException("Board is already active");
+    for (Board board : boards) {
+      if (board.getArchiveState() == ArchiveState.ACTIVE) {
+        board.archive(reason);
+        boardRepository.save(board);
+        board.getEvents().forEach(domainEventPublisher::publish);
+        board.clearEvents();
+      }
+    }
+
+    return boards.stream().map(boardMapper::toDto).toList();
+  }
+
+  @Override
+  public BoardDto unarchive(UUID boardId, UnarchiveReason reason) {
+    Board board = getBoard(boardId, "unarchive");
+    Project parent = projectRepository.findById(board.getProjectId())
+            .orElseThrow(() -> new NotFoundException("Project with id "
+                    + board.getProjectId() + " not found during board unarchive operation"));
+
+    if (parent.getArchiveState() != ArchiveState.ACTIVE)
+      throw new IllegalStateException("Cannot unarchive board because project (parent) with id "
+              + board.getProjectId() + " is archived");
 
     board.unarchive(reason);
     boardRepository.save(board);
@@ -98,14 +117,42 @@ public class BoardServiceImpl implements BoardService {
   }
 
   @Override
+  public List<BoardDto> unarchiveByProject(UUID projectId, UnarchiveReason reason) {
+    Project parent = projectRepository.findById(projectId)
+            .orElseThrow(() -> new NotFoundException("Project with id " + projectId
+                    + " not found during unarchiveByProject operation"));
+
+    List<Board> boards = boardRepository.findBoardsByProjectId(projectId);
+    if (boards.isEmpty())
+      throw new NotFoundException("Boards not found by projectId " + projectId
+              + " during unarchiveByProject operation");
+
+    if (parent.getArchiveState() != ArchiveState.ACTIVE)
+      throw new IllegalStateException("Cannot unarchive board because project (parent) with id "
+              + projectId + " is archived");
+
+    for (Board board : boards) {
+      if (board.canBeUnarchived(reason)) {
+        board.unarchive(reason);
+        boardRepository.save(board);
+        board.getEvents().forEach(domainEventPublisher::publish);
+        board.clearEvents();
+      }
+    }
+
+    return boards.stream().map(boardMapper::toDto).toList();
+  }
+
+  @Override
   public List<TaskDto> getTasks(UUID boardId) {
     if (!boardRepository.existsById(boardId)) {
-      throw new NotFoundException("Board not found");
+      throw new NotFoundException("Board with id " + boardId + " not found during getTasks operation");
     }
 
     List<Task> tasks = taskRepository.findAllByBoardId(boardId);
     if (tasks.isEmpty()) {
-      throw new NotFoundException("Tasks not found");
+      throw new NotFoundException("Tasks not found with board as parent with id "
+              + boardId + " during getTasks operation");
     }
 
     return tasks.stream().map(taskMapper::toDto).toList();
@@ -114,7 +161,8 @@ public class BoardServiceImpl implements BoardService {
   @Override
   public BoardColumnDto changeColumnName(UUID columnId, String newName) {
     BoardColumn boardColumn =  boardColumnRepository.findById(columnId)
-        .orElseThrow(() -> new NotFoundException("Column not found"));
+        .orElseThrow(() -> new NotFoundException("Column with id "
+                + columnId + " not found during changeColumnName operation"));
 
     boardColumn.setName(newName);
 
@@ -140,7 +188,8 @@ public class BoardServiceImpl implements BoardService {
     ArrayList<BoardColumn> columns = boardColumnRepository.findAllByBoardIdOrderByPositionAsc(boardId);
 
     if (columns.isEmpty()) {
-      throw new NotFoundException("Board columns not found");
+      throw new NotFoundException("Board columns not found with board as parent with id "
+              + boardId + "during changeColumnPosition operation");
     }
 
     int listSize = columns.size();
@@ -187,5 +236,11 @@ public class BoardServiceImpl implements BoardService {
     // ПРОВЕРИТЬ на свежую голову
 
     return columns.stream().map(boardColumnMapper::toDto).toList();
+  }
+
+  private Board getBoard(UUID boardId, String operationName) {
+    return boardRepository.findById(boardId)
+            .orElseThrow(() -> new NotFoundException("Board with id " + boardId + " not found during "
+                    + operationName + " operation"));
   }
 }

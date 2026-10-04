@@ -67,7 +67,7 @@ public class Workspace extends AggregateRoot {
       archiveState = ArchiveState.PARENT_ARCHIVED;
     }
 
-    registerEvent(new WorkspaceArchivedEvent(id, reason));
+    registerEvent(new WorkspaceArchivedEvent(id));
   }
 
   public void unarchive(@NotNull UnarchiveReason reason) {
@@ -79,7 +79,7 @@ public class Workspace extends AggregateRoot {
 
     archiveState = ArchiveState.ACTIVE;
 
-    registerEvent(new WorkspaceUnarchivedEvent(id, reason));
+    registerEvent(new WorkspaceUnarchivedEvent(id));
   }
 
   public boolean canBeUnarchived(UnarchiveReason reason) {

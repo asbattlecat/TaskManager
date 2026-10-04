@@ -66,7 +66,7 @@ public class Project extends AggregateRoot {
       archiveState = ArchiveState.PARENT_ARCHIVED;
     }
 
-    registerEvent(new ProjectArchivedEvent(id, reason));
+    registerEvent(new ProjectArchivedEvent(id));
   }
 
   public void unarchive(@NotNull UnarchiveReason reason) {
@@ -78,7 +78,7 @@ public class Project extends AggregateRoot {
 
     archiveState = ArchiveState.ACTIVE;
 
-    registerEvent(new ProjectUnarchivedEvent(id, reason));
+    registerEvent(new ProjectUnarchivedEvent(id));
   }
 
   public boolean canBeUnarchived(UnarchiveReason reason) {

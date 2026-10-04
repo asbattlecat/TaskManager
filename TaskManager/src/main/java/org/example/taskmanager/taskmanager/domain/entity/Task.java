@@ -92,7 +92,7 @@ public class Task extends AggregateRoot {
       archiveState = ArchiveState.PARENT_ARCHIVED;
     }
 
-    registerEvent(new TaskArchivedEvent(id, reason));
+    registerEvent(new TaskArchivedEvent(id));
   }
 
   public void unarchive(UnarchiveReason reason) {
@@ -100,8 +100,21 @@ public class Task extends AggregateRoot {
       throw new IllegalStateException("Task is already active");
     }
 
+    if (!canBeUnarchived(reason)) throw new IllegalStateException("Task cannot be unarchived");
+
     archiveState = ArchiveState.ACTIVE;
 
-    registerEvent(new TaskUnarchivedEvent(id, reason));
+    registerEvent(new TaskUnarchivedEvent(id));
+  }
+
+  public boolean canBeUnarchived(UnarchiveReason reason) {
+    return switch (archiveState) {
+      case USER_ARCHIVED ->
+              reason == UnarchiveReason.USER_ACTION;
+      case PARENT_ARCHIVED ->
+              true;
+      case ACTIVE ->
+              false;
+    };
   }
 }

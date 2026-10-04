@@ -40,13 +40,14 @@ public class TaskServiceImpl implements TaskService {
   private final AuditEntityMapper auditEntityMapper;
 
   private final DomainEventPublisher domainEventPublisher;
+  private final BoardRepository boardRepository;
 
   public  TaskServiceImpl(TaskRepository taskRepository,
                           BoardColumnRepository boardColumnRepository, CommentRepository commentRepository,
                           AuditEntityRepository auditEntityRepository,
                           TagRepository tagRepository, WorkspaceAccessChecker workspaceAccessChecker,
                           TaskMapper taskMapper, TagMapper tagMapper, CommentMapper commentMapper,
-                          AuditEntityMapper auditEntityMapper, DomainEventPublisher domainEventPublisher) {
+                          AuditEntityMapper auditEntityMapper, DomainEventPublisher domainEventPublisher, BoardRepository boardRepository) {
     this.taskRepository = taskRepository;
     this.boardColumnRepository = boardColumnRepository;
     this.commentRepository = commentRepository;
@@ -58,6 +59,7 @@ public class TaskServiceImpl implements TaskService {
     this.commentMapper = commentMapper;
     this.auditEntityMapper = auditEntityMapper;
     this.domainEventPublisher = domainEventPublisher;
+    this.boardRepository = boardRepository;
   }
 
 
@@ -76,23 +78,46 @@ public class TaskServiceImpl implements TaskService {
 
   @Override
   public TaskDto archive(UUID taskId, ArchiveReason reason) {
-    Task task = getTask(taskId);
-
-    if (task.getArchiveState() != ArchiveState.ACTIVE)
-      throw new IllegalArgumentException("Task is already archived");
+    Task task = getTask(taskId, "archive");
 
     task.archive(reason);
     taskRepository.save(task);
+    task.getEvents().forEach(domainEventPublisher::publish);
+    task.clearEvents();
 
-    return  taskMapper.toDto(task);
+    return taskMapper.toDto(task);
+  }
+
+  @Override
+  public List<TaskDto> archiveByBoard(UUID boardId, ArchiveReason reason) {
+    List<Task> tasks = taskRepository.findAllByBoardId(boardId);
+
+    if (tasks.isEmpty())
+      throw new NotFoundException("Tasks with boardId " + boardId
+              + " as parent not found during archiveByBoard operation");
+
+    for (Task task : tasks) {
+      if (task.getArchiveState() == ArchiveState.ACTIVE) {
+        task.archive(reason);
+        taskRepository.save(task);
+        task.getEvents().forEach(domainEventPublisher::publish);
+        task.clearEvents();
+      }
+    }
+
+    return tasks.stream().map(taskMapper::toDto).toList();
   }
 
   @Override
   public TaskDto unarchive(UUID taskId, UnarchiveReason reason) {
-    Task task = getTask(taskId);
+    Task task = getTask(taskId, "unarchive");
+    Board parent = boardRepository.findById(task.getBoardId())
+            .orElseThrow(() -> new NotFoundException("Board as parent of task with id "
+                    + task.getBoardId() + " not found during unarchive operation"));
 
-    if (task.getArchiveState() == ArchiveState.ACTIVE)
-      throw new IllegalArgumentException("Task is already active");
+    if (parent.getArchiveState() != ArchiveState.ACTIVE)
+      throw new IllegalStateException("Cannot unarchive project because board (parent) with id "
+              + parent.getId() + " is archived");
 
     task.unarchive(reason);
     taskRepository.save(task);
@@ -103,8 +128,35 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
+  public List<TaskDto> unarchiveByBoard(UUID boardId, UnarchiveReason reason) {
+    Board parent = boardRepository.findById(boardId)
+            .orElseThrow(() -> new NotFoundException("Board as parent of task with id "
+                    + boardId + " not found during unarchive operation"));
+
+    List<Task> tasks = taskRepository.findAllByBoardId(boardId);
+    if (tasks.isEmpty())
+      throw new NotFoundException("Tasks not found by boardId "
+              + boardId + " during unarchiveByBoard operation");
+
+    if (parent.getArchiveState() != ArchiveState.ACTIVE)
+      throw new IllegalStateException("Cannot unarchive projects because board (parent) with id "
+              + boardId + " is archived");
+
+    for (Task task : tasks) {
+      if (task.canBeUnarchived(reason)) {
+        task.unarchive(reason);
+        taskRepository.save(task);
+        task.getEvents().forEach(domainEventPublisher::publish);
+        task.clearEvents();
+      }
+    }
+
+    return tasks.stream().map(taskMapper::toDto).toList();
+  }
+
+  @Override
   public TaskDto changeName(UUID taskId, String newName, UUID userId) {
-    Task task = getTask(taskId);
+    Task task = getTask(taskId, "changeName");
 
     if (!task.getName().equals(newName)) {
       createAuditEntity(taskId, userId, "name", task.getName(), newName);
@@ -118,7 +170,7 @@ public class TaskServiceImpl implements TaskService {
 
   @Override
   public TaskDto changeDescription(UUID taskId, String newDescription, UUID userId) {
-    Task task = getTask(taskId);
+    Task task = getTask(taskId, "changeDescription");
 
     if (!task.getDescription().equals(newDescription)) {
       createAuditEntity(taskId, userId, "description", task.getDescription(), newDescription);
@@ -132,7 +184,7 @@ public class TaskServiceImpl implements TaskService {
 
   @Override
   public TaskDto changePriority(UUID taskId, TaskPriority newPriority, UUID userId) {
-    Task task = getTask(taskId);
+    Task task = getTask(taskId, "changePriority");
 
     if (!task.getPriority().equals(newPriority)) {
       createAuditEntity(taskId, userId, "priority",
@@ -147,7 +199,7 @@ public class TaskServiceImpl implements TaskService {
 
   @Override
   public TaskDto changeColumn(UUID taskId, UUID newColumnId) {
-    Task task = getTask(taskId);
+    Task task = getTask(taskId, "changeColumn");
 
     if (!boardColumnRepository.findById(newColumnId).isPresent()) {
       throw new NotFoundException("Column not found");
@@ -162,7 +214,7 @@ public class TaskServiceImpl implements TaskService {
 
   @Override
   public TaskDto changeDeadline(UUID taskId, Instant newDeadline, UUID userId) {
-    Task task = getTask(taskId);
+    Task task = getTask(taskId, "changeDeadline");
 
     if (!task.getDeadline().isAfter(newDeadline) && !task.getDeadline().equals(newDeadline)) {
       createAuditEntity(taskId, userId, "deadline",
@@ -177,7 +229,7 @@ public class TaskServiceImpl implements TaskService {
 
   @Override
   public TaskDto changeStatus(UUID taskId, TaskStatus newStatus, UUID userId) {
-    Task task = getTask(taskId);
+    Task task = getTask(taskId, "changeStatus");
 
     if (!task.getStatus().equals(newStatus)) {
       createAuditEntity(taskId, userId, "status",
@@ -192,7 +244,7 @@ public class TaskServiceImpl implements TaskService {
 
   @Override
   public TaskDto setAssignee(UUID taskId, UUID workspaceMemberId, UUID userId) {
-    Task task = getTask(taskId);
+    Task task = getTask(taskId, "setAssignee");
 
     workspaceAccessChecker.check(task, workspaceMemberId);
 
@@ -209,7 +261,7 @@ public class TaskServiceImpl implements TaskService {
 
   @Override
   public CommentDto addComment(UUID taskId, UUID workspaceMemberId, String content) {
-    Task task = getTask(taskId);
+    Task task = getTask(taskId, "addComment");
 
     workspaceAccessChecker.check(task, workspaceMemberId);
 
@@ -221,7 +273,7 @@ public class TaskServiceImpl implements TaskService {
 
   @Override
   public TagDto addTag(UUID taskId, String name, TagColor color) {
-    getTask(taskId);
+    getTask(taskId, "addTag");
 
     Tag tag = new Tag(taskId, name, color);
     tagRepository.save(tag);
@@ -253,9 +305,10 @@ public class TaskServiceImpl implements TaskService {
     return entities.stream().map(auditEntityMapper::toDto).toList();
   }
 
-  private Task getTask(UUID taskId) {
+  private Task getTask(UUID taskId, String operationName) {
     return taskRepository.findById(taskId)
-            .orElseThrow(() -> new NotFoundException("Task not found"));
+            .orElseThrow(() -> new NotFoundException("Task with id " + taskId + " not found during "
+                    + operationName + "operation"));
   }
 
   private void createAuditEntity(UUID taskId, UUID userId, String fieldName, String oldValue, String newValue) {

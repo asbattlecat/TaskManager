@@ -15,7 +15,9 @@ public interface TaskService {
   TaskDto create(UUID boardId, UUID columnId, String name, String description, TaskStatus status,
                  TaskPriority priority, UUID assigneeId, UUID creatorId, Instant deadline);
   TaskDto archive(UUID taskId, ArchiveReason archiveReason);
+  List<TaskDto> archiveByBoard(UUID boardId, ArchiveReason reason);
   TaskDto unarchive(UUID taskId, UnarchiveReason reason);
+  List<TaskDto> unarchiveByBoard(UUID boardId, UnarchiveReason reason);
   TaskDto changeName(UUID taskId, String newName, UUID userId);
   TaskDto changeDescription(UUID taskId, String newDescription, UUID userId);
   TaskDto changePriority(UUID taskId, TaskPriority newPriority, UUID userId);

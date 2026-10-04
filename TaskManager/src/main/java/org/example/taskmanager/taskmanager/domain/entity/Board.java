@@ -71,7 +71,7 @@ public class Board extends AggregateRoot {
       archiveState = ArchiveState.PARENT_ARCHIVED;
     }
 
-    registerEvent(new BoardArchivedEvent(id, reason));
+    registerEvent(new BoardArchivedEvent(id));
   }
 
   public void unarchive(UnarchiveReason reason) {
@@ -81,6 +81,17 @@ public class Board extends AggregateRoot {
 
     archiveState = ArchiveState.ACTIVE;
 
-    registerEvent(new BoardUnarchivedEvent(id, reason));
+    registerEvent(new BoardUnarchivedEvent(id));
+  }
+
+  public boolean canBeUnarchived(UnarchiveReason reason) {
+    return switch (archiveState) {
+      case USER_ARCHIVED ->
+              reason == UnarchiveReason.USER_ACTION;
+      case PARENT_ARCHIVED ->
+              true;
+      case ACTIVE ->
+              false;
+    };
   }
 }

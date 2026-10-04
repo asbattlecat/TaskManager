@@ -49,7 +49,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
   @Override
   public WorkspaceDto archive(UUID workspaceId, ArchiveReason reason) {
-    Workspace workspace = getWorkspace(workspaceId);
+    Workspace workspace = getWorkspace(workspaceId, "archive");
 
     if (workspace.getArchiveState() != ArchiveState.ACTIVE)
       throw new IllegalStateException("Workspace is already archived");
@@ -67,7 +67,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
   @Override
   public WorkspaceDto unarchive(UUID workspaceId, UnarchiveReason reason) {
-    Workspace workspace = getWorkspace(workspaceId);
+    Workspace workspace = getWorkspace(workspaceId, "unarchive");
 
     if (workspace.getArchiveState() == ArchiveState.ACTIVE)
       throw new IllegalStateException("Workspace is already active");
@@ -85,7 +85,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   @Override
   public List<ProjectDto> getProjects(UUID workspaceId) {
     if (!workspaceRepository.existsById(workspaceId)) {
-      throw new NotFoundException("Workspace not found");
+      throw new NotFoundException("Workspace with id " + workspaceId + " not found during getProjects operation");
     }
 
     List<Project> projects = projectRepository.findAllByWorkspaceId(workspaceId);
@@ -98,7 +98,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
   @Override
   public WorkspaceDto changeName(UUID workspaceId, String newName) {
-    Workspace workspace = getWorkspace(workspaceId);
+    Workspace workspace = getWorkspace(workspaceId, "changeName");
 
     workspace.setName(newName);
     workspaceRepository.save(workspace);
@@ -108,7 +108,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
   @Override
   public WorkspaceDto changeDescription(UUID workspaceId, String newDescription) {
-    Workspace workspace = getWorkspace(workspaceId);
+    Workspace workspace = getWorkspace(workspaceId, "changeDescription");
 
     workspace.setDescription(newDescription);
     workspaceRepository.save(workspace);
@@ -116,8 +116,9 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     return workspaceMapper.toDto(workspace);
   }
 
-  private Workspace getWorkspace(UUID workspaceId) {
+  private Workspace getWorkspace(UUID workspaceId, String operationName) {
     return workspaceRepository.findById(workspaceId)
-            .orElseThrow(() -> new NotFoundException("Workspace not found"));
+            .orElseThrow(() -> new NotFoundException("Workspace with id "
+                    + workspaceId + " not found during " + operationName + "operation"));
   }
 }
