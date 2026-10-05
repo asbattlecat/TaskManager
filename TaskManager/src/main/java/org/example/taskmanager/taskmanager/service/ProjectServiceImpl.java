@@ -71,9 +71,7 @@ public class ProjectServiceImpl implements ProjectService {
   public List<ProjectDto> archiveByWorkspace(UUID workspaceId, ArchiveReason reason) {
     List<Project> projects = projectRepository.findAllByWorkspaceId(workspaceId);
 
-    if (projects.isEmpty())
-      throw new NotFoundException("Projects with workspaceId " + workspaceId
-            + " as parent not found during archiveByWorkspace operation");
+    checkProjectsFound(projects, workspaceId, "archiveByWorkspace");
 
     for (Project project : projects) {
       if (project.getArchiveState() == ArchiveState.ACTIVE) {
@@ -90,13 +88,9 @@ public class ProjectServiceImpl implements ProjectService {
   @Override
   public ProjectDto unarchive(UUID projectId, UnarchiveReason reason) {
     Project project = getProject(projectId, "unarchive");
-    Workspace parent = workspaceRepository.findById(project.getWorkspaceId())
-            .orElseThrow(() -> new NotFoundException("Workspace as parent of project with id "
-                    + projectId + " not found during unarchive operation"));
+    Workspace parent = getParent(project.getWorkspaceId(), "unarchive");
 
-    if (parent.getArchiveState() != ArchiveState.ACTIVE)
-      throw new IllegalStateException("Cannot unarchive project because workspace (parent) with id "
-              + project.getWorkspaceId() + " is archived");
+    checkParentBeforeUnarchive(parent);
 
     project.unarchive(reason);
     projectRepository.save(project);
@@ -108,18 +102,11 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public List<ProjectDto> unarchiveByWorkspace(UUID workspaceId, UnarchiveReason reason) {
-    Workspace parent = workspaceRepository.findById(workspaceId)
-            .orElseThrow(() -> new NotFoundException("Workspace with id "
-                    + workspaceId + " not found during unarchiveByWorkspace operation"));
-
+    Workspace parent = getParent(workspaceId, "unarchiveByWorkspace");
     List<Project> projects = projectRepository.findAllByWorkspaceId(workspaceId);
-    if (projects.isEmpty())
-      throw new NotFoundException("Projects not found by workspaceId "
-            + workspaceId + " during unarchiveByWorkspace operation");
 
-    if (parent.getArchiveState() != ArchiveState.ACTIVE)
-      throw new IllegalStateException("Cannot unarchive projects because workspace (parent) with id "
-              + workspaceId + " is archived");
+    checkProjectsFound(projects, workspaceId, "unarchiveByWorkspace");
+    checkParentBeforeUnarchive(parent);
 
     for (Project project : projects) {
       if (project.canBeUnarchived(reason)) {
@@ -168,5 +155,23 @@ public class ProjectServiceImpl implements ProjectService {
             .orElseThrow(() -> new NotFoundException("Project with id "
                     + projectId + " not found during "
                     + operationName + "operation"));
+  }
+
+  private Workspace getParent(UUID workspaceId,String operationName) {
+    return workspaceRepository.findById(workspaceId)
+            .orElseThrow(() -> new NotFoundException("Workspace as parent of project with id " + workspaceId
+                    + " not found during " + operationName + " operation"));
+  }
+
+  private void checkParentBeforeUnarchive(Workspace parent) {
+    if (parent.getArchiveState() != ArchiveState.ACTIVE)
+      throw new IllegalStateException("Cannot unarchive project because workspace (parent) with id "
+              + parent.getId() + " is archived");
+  }
+
+  private void checkProjectsFound(List<Project> projects, UUID workspaceId, String operationName) {
+    if (projects.isEmpty())
+      throw new NotFoundException("Projects not found by workspaceId "
+              + workspaceId + " during " + operationName + " operation");
   }
 }

@@ -4,7 +4,6 @@ import org.example.taskmanager.taskmanager.controller.dto.response.AuditEntityDt
 import org.example.taskmanager.taskmanager.controller.dto.response.CommentDto;
 import org.example.taskmanager.taskmanager.controller.dto.response.TagDto;
 import org.example.taskmanager.taskmanager.controller.dto.response.TaskDto;
-import org.example.taskmanager.taskmanager.infrastructure.event.DomainEvent;
 import org.example.taskmanager.taskmanager.domain.entity.*;
 import org.example.taskmanager.taskmanager.domain.enums.*;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEventPublisher;
@@ -42,7 +41,7 @@ public class TaskServiceImpl implements TaskService {
   private final DomainEventPublisher domainEventPublisher;
   private final BoardRepository boardRepository;
 
-  public  TaskServiceImpl(TaskRepository taskRepository,
+  public TaskServiceImpl(TaskRepository taskRepository,
                           BoardColumnRepository boardColumnRepository, CommentRepository commentRepository,
                           AuditEntityRepository auditEntityRepository,
                           TagRepository tagRepository, WorkspaceAccessChecker workspaceAccessChecker,
@@ -55,10 +54,10 @@ public class TaskServiceImpl implements TaskService {
     this.auditEntityRepository = auditEntityRepository;
     this.workspaceAccessChecker = workspaceAccessChecker;
     this.taskMapper = taskMapper;
-    this.tagMapper = tagMapper;
     this.commentMapper = commentMapper;
     this.auditEntityMapper = auditEntityMapper;
     this.domainEventPublisher = domainEventPublisher;
+    this.tagMapper = tagMapper;
     this.boardRepository = boardRepository;
   }
 
