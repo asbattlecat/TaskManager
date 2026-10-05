@@ -25,6 +25,7 @@ import org.example.taskmanager.taskmanager.service.interfaces.BoardService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -58,10 +59,11 @@ public class BoardServiceImpl implements BoardService {
   @Override
   public BoardDto create(UUID projectId, String name, String description, BoardType boardType) {
     if (!projectRepository.existsById(projectId))
-      throw new NotFoundException("Project with id "
-              + projectId + " not found during board create operation");
+      throw new NotFoundException("Project with id " + projectId + " not found during board create operation");
 
     Board board = new Board(projectId, name, description, boardType);
+
+    boardRepository.save(board);
 
     return boardMapper.toDto(board);
   }
@@ -81,9 +83,7 @@ public class BoardServiceImpl implements BoardService {
   @Override
   public List<BoardDto> archiveByProject(UUID projectId, ArchiveReason reason) {
     List<Board> boards = boardRepository.findBoardsByProjectId(projectId);
-    if (boards.isEmpty())
-      throw new NotFoundException("Boards with projectId " + projectId
-              + " as parent not found during archiveByProject operation");
+    checkBoardsFound(boards, projectId, "archiveByProject");
 
     for (Board board : boards) {
       if (board.getArchiveState() == ArchiveState.ACTIVE) {
@@ -100,13 +100,9 @@ public class BoardServiceImpl implements BoardService {
   @Override
   public BoardDto unarchive(UUID boardId, UnarchiveReason reason) {
     Board board = getBoard(boardId, "unarchive");
-    Project parent = projectRepository.findById(board.getProjectId())
-            .orElseThrow(() -> new NotFoundException("Project with id "
-                    + board.getProjectId() + " not found during board unarchive operation"));
 
-    if (parent.getArchiveState() != ArchiveState.ACTIVE)
-      throw new IllegalStateException("Cannot unarchive board because project (parent) with id "
-              + board.getProjectId() + " is archived");
+    Project parent = getParent(board.getProjectId(), "unarchive");
+    checkParentBeforeUnarchive(parent);
 
     board.unarchive(reason);
     boardRepository.save(board);
@@ -118,18 +114,12 @@ public class BoardServiceImpl implements BoardService {
 
   @Override
   public List<BoardDto> unarchiveByProject(UUID projectId, UnarchiveReason reason) {
-    Project parent = projectRepository.findById(projectId)
-            .orElseThrow(() -> new NotFoundException("Project with id " + projectId
-                    + " not found during unarchiveByProject operation"));
-
     List<Board> boards = boardRepository.findBoardsByProjectId(projectId);
-    if (boards.isEmpty())
-      throw new NotFoundException("Boards not found by projectId " + projectId
-              + " during unarchiveByProject operation");
 
-    if (parent.getArchiveState() != ArchiveState.ACTIVE)
-      throw new IllegalStateException("Cannot unarchive board because project (parent) with id "
-              + projectId + " is archived");
+    checkBoardsFound(boards, projectId, "unarchiveByProject");
+
+    Project parent = getParent(projectId, "unarchiveByProject");
+    checkParentBeforeUnarchive(parent);
 
     for (Board board : boards) {
       if (board.canBeUnarchived(reason)) {
@@ -161,8 +151,8 @@ public class BoardServiceImpl implements BoardService {
   @Override
   public BoardColumnDto changeColumnName(UUID columnId, String newName) {
     BoardColumn boardColumn =  boardColumnRepository.findById(columnId)
-        .orElseThrow(() -> new NotFoundException("Column with id "
-                + columnId + " not found during changeColumnName operation"));
+            .orElseThrow(() -> new NotFoundException("Column with id "
+                    + columnId + " not found during changeColumnName operation"));
 
     boardColumn.setName(newName);
 
@@ -219,7 +209,7 @@ public class BoardServiceImpl implements BoardService {
       }
     }
 
-    columns.sort((first, second) -> Integer.compare(first.getPosition(), second.getPosition()));
+    columns.sort(Comparator.comparingInt(BoardColumn::getPosition));
 
     if (oldPosition < newPosition) {
       for (int i = oldPosition; i <= newPosition; i++) {
@@ -242,5 +232,23 @@ public class BoardServiceImpl implements BoardService {
     return boardRepository.findById(boardId)
             .orElseThrow(() -> new NotFoundException("Board with id " + boardId + " not found during "
                     + operationName + " operation"));
+  }
+
+  private Project getParent(UUID projectId, String operationName) {
+    return projectRepository.findById(projectId)
+            .orElseThrow(() -> new NotFoundException("Project with id " + projectId
+                    + " as parent of board not found during " + operationName + " operation"));
+  }
+
+  private void checkParentBeforeUnarchive(Project parent) {
+    if (parent.getArchiveState() != ArchiveState.ACTIVE)
+      throw new IllegalStateException("Cannot unarchive boards because project (parent) with id "
+              + parent.getId() + " is archived");
+  }
+
+  private void checkBoardsFound(List<Board> boards, UUID projectId, String operationName) {
+    if (boards.isEmpty())
+      throw new NotFoundException("Boards with projectId " + projectId + " as parent id not found during "
+              + operationName + " operation");
   }
 }

@@ -4,8 +4,6 @@ import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
 import org.example.taskmanager.taskmanager.domain.event.BoardArchivedEvent;
 import org.example.taskmanager.taskmanager.domain.event.BoardUnarchivedEvent;
-import org.example.taskmanager.taskmanager.domain.event.TaskArchivedEvent;
-import org.example.taskmanager.taskmanager.repository.TaskRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.TaskService;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;

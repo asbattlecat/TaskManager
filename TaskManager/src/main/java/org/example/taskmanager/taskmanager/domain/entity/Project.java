@@ -71,7 +71,7 @@ public class Project extends AggregateRoot {
 
   public void unarchive(@NotNull UnarchiveReason reason) {
     if (archiveState == ArchiveState.ACTIVE) {
-      throw new IllegalStateException("Project is already active");
+      throw new IllegalStateException("Project is already active, cannot unarchive");
     }
 
     if (!canBeUnarchived(reason)) throw new IllegalStateException("Project cannot be unarchived");

@@ -97,7 +97,7 @@ public class Task extends AggregateRoot {
 
   public void unarchive(UnarchiveReason reason) {
     if (archiveState == ArchiveState.ACTIVE) {
-      throw new IllegalStateException("Task is already active");
+      throw new IllegalStateException("Task is already active, cannot unarchive");
     }
 
     if (!canBeUnarchived(reason)) throw new IllegalStateException("Task cannot be unarchived");

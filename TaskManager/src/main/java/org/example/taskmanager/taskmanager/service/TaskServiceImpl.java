@@ -67,6 +67,9 @@ public class TaskServiceImpl implements TaskService {
   public TaskDto create(UUID boardId, UUID columnId, String name, String description,
                         TaskStatus status, TaskPriority priority, UUID assigneeId,
                         UUID creatorId, Instant deadline) {
+    if (!boardRepository.existsById(boardId))
+      throw new NotFoundException("Board with id " + boardId + "not found during board create operation");
+
 
     Task task = new Task(boardId, columnId, name, description, status, priority,
             assigneeId, creatorId, deadline);
@@ -92,9 +95,7 @@ public class TaskServiceImpl implements TaskService {
   public List<TaskDto> archiveByBoard(UUID boardId, ArchiveReason reason) {
     List<Task> tasks = taskRepository.findAllByBoardId(boardId);
 
-    if (tasks.isEmpty())
-      throw new NotFoundException("Tasks with boardId " + boardId
-              + " as parent not found during archiveByBoard operation");
+    checkTasksFound(tasks, boardId, "archiveByBoard");
 
     for (Task task : tasks) {
       if (task.getArchiveState() == ArchiveState.ACTIVE) {
@@ -111,13 +112,9 @@ public class TaskServiceImpl implements TaskService {
   @Override
   public TaskDto unarchive(UUID taskId, UnarchiveReason reason) {
     Task task = getTask(taskId, "unarchive");
-    Board parent = boardRepository.findById(task.getBoardId())
-            .orElseThrow(() -> new NotFoundException("Board as parent of task with id "
-                    + task.getBoardId() + " not found during unarchive operation"));
 
-    if (parent.getArchiveState() != ArchiveState.ACTIVE)
-      throw new IllegalStateException("Cannot unarchive project because board (parent) with id "
-              + parent.getId() + " is archived");
+    Board parent = getParent(task.getBoardId(), "unarchive");
+    checkParentBeforeUnarchive(parent);
 
     task.unarchive(reason);
     taskRepository.save(task);
@@ -129,18 +126,11 @@ public class TaskServiceImpl implements TaskService {
 
   @Override
   public List<TaskDto> unarchiveByBoard(UUID boardId, UnarchiveReason reason) {
-    Board parent = boardRepository.findById(boardId)
-            .orElseThrow(() -> new NotFoundException("Board as parent of task with id "
-                    + boardId + " not found during unarchive operation"));
-
     List<Task> tasks = taskRepository.findAllByBoardId(boardId);
-    if (tasks.isEmpty())
-      throw new NotFoundException("Tasks not found by boardId "
-              + boardId + " during unarchiveByBoard operation");
+    checkTasksFound(tasks, boardId, "unarchiveByBoard");
 
-    if (parent.getArchiveState() != ArchiveState.ACTIVE)
-      throw new IllegalStateException("Cannot unarchive projects because board (parent) with id "
-              + boardId + " is archived");
+    Board parent = getParent(boardId, "unarchiveByBoard");
+    checkParentBeforeUnarchive(parent);
 
     for (Task task : tasks) {
       if (task.canBeUnarchived(reason)) {
@@ -314,5 +304,23 @@ public class TaskServiceImpl implements TaskService {
   private void createAuditEntity(UUID taskId, UUID userId, String fieldName, String oldValue, String newValue) {
     AuditEntity entity = new AuditEntity(taskId, userId, fieldName, oldValue, newValue);
     auditEntityRepository.save(entity);
+  }
+
+  private Board getParent(UUID boardId, String operationName) {
+    return boardRepository.findById(boardId)
+            .orElseThrow(() -> new NotFoundException("Board with id " + boardId
+                    + " as parent of task not found during " + operationName + " operation"));
+  }
+
+  private void checkParentBeforeUnarchive(Board parent) {
+    if (parent.getArchiveState() != ArchiveState.ACTIVE)
+      throw new IllegalStateException("Cannot unarchive tasks because board (parent) with id "
+              + parent.getId() + " is archived");
+  }
+
+  private void checkTasksFound(List<Task> tasks, UUID boardId, String operationName) {
+    if (tasks.isEmpty())
+      throw new NotFoundException("Tasks with boardId " + boardId
+              + " as parent id not found during " + operationName + " operation");
   }
 }

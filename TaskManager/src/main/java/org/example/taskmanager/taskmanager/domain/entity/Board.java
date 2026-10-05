@@ -76,7 +76,7 @@ public class Board extends AggregateRoot {
 
   public void unarchive(UnarchiveReason reason) {
     if (archiveState == ArchiveState.ACTIVE) {
-      throw new IllegalStateException("Board is already active");
+      throw new IllegalStateException("Board is already active, cannot unarchive");
     }
 
     archiveState = ArchiveState.ACTIVE;
