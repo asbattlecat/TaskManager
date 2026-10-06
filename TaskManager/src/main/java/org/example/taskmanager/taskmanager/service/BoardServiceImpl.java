@@ -41,10 +41,16 @@ public class BoardServiceImpl implements BoardService {
 
   private final DomainEventPublisher  domainEventPublisher;
 
-  public  BoardServiceImpl(ProjectRepository projectRepository, TaskRepository taskRepository,
-                           BoardColumnRepository boardColumnRepository, BoardRepository boardRepository,
-                           BoardMapper boardMapper, BoardColumnMapper boardColumnMapper, TaskMapper taskMapper,
-                           DomainEventPublisher domainEventPublisher) {
+  public  BoardServiceImpl(
+          ProjectRepository projectRepository,
+          TaskRepository taskRepository,
+          BoardColumnRepository boardColumnRepository,
+          BoardRepository boardRepository,
+          BoardMapper boardMapper,
+          BoardColumnMapper boardColumnMapper,
+          TaskMapper taskMapper,
+          DomainEventPublisher domainEventPublisher
+  ) {
     this.projectRepository = projectRepository;
     this.taskRepository = taskRepository;
     this.boardRepository = boardRepository;

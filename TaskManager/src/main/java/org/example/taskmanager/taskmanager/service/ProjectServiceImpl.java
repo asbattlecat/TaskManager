@@ -31,9 +31,14 @@ public class ProjectServiceImpl implements ProjectService {
 
   private final DomainEventPublisher domainEventPublisher;
 
-  public ProjectServiceImpl(WorkspaceRepository workspaceRepository, ProjectRepository projectRepository,
-                            BoardRepository boardRepository, ProjectMapper projectMapper,
-                            BoardMapper boardMapper, DomainEventPublisher domainEventPublisher) {
+  public ProjectServiceImpl(
+          WorkspaceRepository workspaceRepository,
+          ProjectRepository projectRepository,
+          BoardRepository boardRepository,
+          ProjectMapper projectMapper,
+          BoardMapper boardMapper,
+          DomainEventPublisher domainEventPublisher
+  ) {
     this.workspaceRepository = workspaceRepository;
     this.projectRepository = projectRepository;
     this.boardRepository = boardRepository;

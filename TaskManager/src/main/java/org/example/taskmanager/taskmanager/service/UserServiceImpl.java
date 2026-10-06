@@ -19,7 +19,11 @@ public class UserServiceImpl implements UserService {
   private final PasswordHasher passwordHasher;
   private final UserMapper userMapper;
 
-  public UserServiceImpl(UserRepository userRepository, PasswordHasher passwordHasher, UserMapper userMapper) {
+  public UserServiceImpl(
+          UserRepository userRepository,
+          PasswordHasher passwordHasher,
+          UserMapper userMapper
+  ) {
     this.userRepository = userRepository;
     this.passwordHasher = passwordHasher;
     this.userMapper = userMapper;
@@ -41,7 +45,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserDto updateUserInfo(UUID userId, UserDto dto) {
     User user = userRepository.findById(userId)
-            .orElseThrow(() -> new NotFoundException("User not found"));
+            .orElseThrow(() -> new NotFoundException("User with userId " + userId + " not found"));
 
     user.setName(dto.name());
     user.setEmail(dto.email());
@@ -73,7 +77,7 @@ public class UserServiceImpl implements UserService {
     User user = getUser(userId);
 
     if (user.isActive()) {
-      throw new  InvalidCredentialsException("User already activated");
+      throw new  InvalidCredentialsException("User with userId " + userId + " is already active");
     }
 
     user.setActive(true);
@@ -86,7 +90,7 @@ public class UserServiceImpl implements UserService {
     User user = getUser(userId);
 
     if (!user.isActive()) {
-      throw new  InvalidCredentialsException("User already deactivated");
+      throw new  InvalidCredentialsException("User with userId " + userId + " is already deactivated");
     }
 
     user.setActive(false);
@@ -112,13 +116,13 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserDto getByEmail(String email) {
     User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new NotFoundException("User not found"));
+            .orElseThrow(() -> new NotFoundException("User with email " + email + " not found"));
 
     return userMapper.toDto(user);
   }
 
   private User getUser(UUID userId) {
     return userRepository.findById(userId)
-            .orElseThrow(() -> new NotFoundException("User not found"));
+            .orElseThrow(() -> new NotFoundException("User with userId " + userId + " not found"));
   }
 }

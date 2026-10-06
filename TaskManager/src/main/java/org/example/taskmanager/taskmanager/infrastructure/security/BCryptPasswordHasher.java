@@ -2,9 +2,12 @@ package org.example.taskmanager.taskmanager.infrastructure.security;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-public class BCryptPasswordHasher implements PasswordEncoder {
-  private final PasswordEncoder encoder =  new BCryptPasswordEncoder();
+@Component
+public class BCryptPasswordHasher implements PasswordHasher {
+  private final PasswordEncoder encoder = new BCryptPasswordEncoder();
 
   @Override
   public String encode(CharSequence rawPassword) {

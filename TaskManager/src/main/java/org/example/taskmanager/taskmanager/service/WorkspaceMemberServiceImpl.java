@@ -23,10 +23,12 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
   private final WorkspaceRepository workspaceRepository;
   private final WorkspaceMemberMapper workspaceMemberMapper;
 
-  public WorkspaceMemberServiceImpl(UserRepository userRepository,
-                                    WorkspaceMemberRepository workspaceMemberRepository,
-                                    WorkspaceRepository workspaceRepository,
-                                    WorkspaceMemberMapper workspaceMemberMapper) {
+  public WorkspaceMemberServiceImpl(
+          UserRepository userRepository,
+          WorkspaceMemberRepository workspaceMemberRepository,
+          WorkspaceRepository workspaceRepository,
+          WorkspaceMemberMapper workspaceMemberMapper
+  ) {
     this.userRepository = userRepository;
     this.workspaceMemberRepository = workspaceMemberRepository;
     this.workspaceRepository = workspaceRepository;
@@ -36,11 +38,12 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
   @Override
   public WorkspaceMemberDto createMember(UUID workspaceId, UUID userId, WorkspaceRole role) {
     userAndWorkspaceExists(userId, workspaceId);
+
     // workspace member должен быть уникален для workspace
-    if (workspaceMemberRepository.
-            existsByUserIdAndWorkspaceId(userId, workspaceId)) {
-      throw new AlreadyExistsException("WorkspaceMember already exists");
-    }
+    if (workspaceMemberRepository.existsByUserIdAndWorkspaceId(userId, workspaceId))
+      throw new AlreadyExistsException("WorkspaceMember with workspaceId " + workspaceId
+              + " and userId " + userId + " already exists");
+
 
     WorkspaceMember workspaceMember = new WorkspaceMember(workspaceId, userId,
             role);
@@ -52,7 +55,7 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
   public WorkspaceMemberDto setRoleToMember(UUID memberId, WorkspaceRole role) {
 
     WorkspaceMember workspaceMember = workspaceMemberRepository.findById(memberId)
-            .orElseThrow(() -> new NotFoundException("Member not found"));
+            .orElseThrow(() -> new NotFoundException("Member with id " + memberId + " not found"));
 
     workspaceMember.setRole(role);
     workspaceMemberRepository.save(workspaceMember);
@@ -63,9 +66,9 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
   @Override
   public List<WorkspaceMemberDto> getMembers(UUID workspaceId) {
     List<WorkspaceMember> members = workspaceMemberRepository.findAllByWorkspaceId(workspaceId);
-    if (members.isEmpty()) {
-      throw new NotFoundException("Workspace not found");
-    }
+    if (members.isEmpty())
+      throw new NotFoundException("Workspace members with workspaceId as parent id "
+              + workspaceId + " not found");
 
     return members.stream().map(workspaceMemberMapper::toDto).toList();
   }
@@ -73,7 +76,8 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
   @Override
   public WorkspaceMemberDto delete(UUID workspaceMemberId) {
     WorkspaceMember member = workspaceMemberRepository.findById(workspaceMemberId)
-            .orElseThrow(() -> new NotFoundException("Member not found"));
+            .orElseThrow(() -> new NotFoundException("Member with id " + workspaceMemberId
+                    + " not found"));
 
     workspaceMemberRepository.delete(member);
     return workspaceMemberMapper.toDto(member);
@@ -81,10 +85,10 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
 
   private void userAndWorkspaceExists(UUID userId, UUID workspaceId) {
     if (!userRepository.existsById(userId)) { // нет такого User
-      throw new NotFoundException("User not found");
+      throw new NotFoundException("User with id " + userId + " not found");
     }
     if (!workspaceRepository.existsById(workspaceId)) { // нет такого Workspace
-      throw new NotFoundException("Workspace not found");
+      throw new NotFoundException("Workspace with id " + workspaceId + " not found");
     }
   }
 }

@@ -29,9 +29,13 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
   private final DomainEventPublisher domainEventPublisher;
 
-  public WorkspaceServiceImpl(ProjectRepository projectRepository, WorkspaceRepository workspaceRepository,
-                              WorkspaceMapper workspaceMapper, ProjectMapper projectMapper,
-                              DomainEventPublisher domainEventPublisher) {
+  public WorkspaceServiceImpl(
+          ProjectRepository projectRepository,
+          WorkspaceRepository workspaceRepository,
+          WorkspaceMapper workspaceMapper,
+          ProjectMapper projectMapper,
+          DomainEventPublisher domainEventPublisher
+  ) {
     this.projectRepository = projectRepository;
     this.workspaceRepository = workspaceRepository;
     this.workspaceMapper = workspaceMapper;
@@ -52,10 +56,11 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     Workspace workspace = getWorkspace(workspaceId, "archive");
 
     if (workspace.getArchiveState() != ArchiveState.ACTIVE)
-      throw new IllegalStateException("Workspace is already archived");
+      throw new IllegalStateException("Workspace with id " + workspaceId + " is already archived");
 
     if (reason == ArchiveReason.PARENT_ARCHIVED)
-      throw new IllegalArgumentException("Workspace cannot be archived by cascade mechanics");
+      throw new IllegalArgumentException("Workspace with id " + workspaceId
+              + " cannot be archived by cascade mechanics");
 
     workspace.archive(reason);
     workspaceRepository.save(workspace);
@@ -70,9 +75,10 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     Workspace workspace = getWorkspace(workspaceId, "unarchive");
 
     if (workspace.getArchiveState() == ArchiveState.ACTIVE)
-      throw new IllegalStateException("Workspace is already active");
+      throw new IllegalStateException("Workspace with id " + workspaceId + " is already active");
     if (reason == UnarchiveReason.CASCADE)
-      throw new IllegalArgumentException("Workspace cannot be archived by cascade mechanics");
+      throw new IllegalArgumentException("Workspace with id "
+              + workspaceId + " cannot be archived by cascade mechanics");
 
     workspace.unarchive(reason);
     workspaceRepository.save(workspace);
@@ -85,12 +91,14 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   @Override
   public List<ProjectDto> getProjects(UUID workspaceId) {
     if (!workspaceRepository.existsById(workspaceId)) {
-      throw new NotFoundException("Workspace with id " + workspaceId + " not found during getProjects operation");
+      throw new NotFoundException("Workspace with id " + workspaceId
+              + " not found during getProjects operation");
     }
 
     List<Project> projects = projectRepository.findAllByWorkspaceId(workspaceId);
     if (projects.isEmpty()) {
-      throw new NotFoundException("Projects not found");
+      throw new NotFoundException("Projects with workspaceId as parent id "
+              + workspaceId + " not found");
     }
 
     return projects.stream().map(projectMapper::toDto).toList();

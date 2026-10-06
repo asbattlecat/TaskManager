@@ -21,7 +21,7 @@ public class AuditEntity {
   @Column(nullable = false)
   private final UUID taskId;
 
-  @Column(nullable = false)
+  @Column
   private final UUID userId;
 
   @Column(nullable = false)
@@ -36,7 +36,7 @@ public class AuditEntity {
   @Column(nullable = false)
   private final Instant timestamp;
 
-  public AuditEntity(@NotNull UUID taskId, @NotNull UUID userId, @NotNull String fieldName, @NotNull String oldValue,
+  public AuditEntity(@NotNull UUID taskId, UUID userId, @NotNull String fieldName, @NotNull String oldValue,
                      @NotNull String newValue) {
     id = UUID.randomUUID();
 
