@@ -127,6 +127,10 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public List<BoardDto> getProjectBoards(UUID projectId) {
+    Project project = getProject(projectId, "getProjectBoards");
+
+    isProjectActive(project, "getProjectBoards");
+
     List<Board> boards = boardRepository.findBoardsByProjectId(projectId);
     if (boards.isEmpty()) {
       throw new NotFoundException("Boards not found by projectId " + projectId + " during getProjectBoards operation");
@@ -139,6 +143,8 @@ public class ProjectServiceImpl implements ProjectService {
   public ProjectDto changeName(UUID projectId, String newName) {
     Project project = getProject(projectId, "change name");
 
+    isProjectActive(project, "changeName");
+
     project.setName(newName);
     projectRepository.save(project);
 
@@ -148,6 +154,8 @@ public class ProjectServiceImpl implements ProjectService {
   @Override
   public ProjectDto changeDescription(UUID projectId, String newDescription) {
     Project project = getProject(projectId, "change description");
+
+    isProjectActive(project, "changeDescription");
 
     project.setDescription(newDescription);
     projectRepository.save(project);
@@ -178,5 +186,11 @@ public class ProjectServiceImpl implements ProjectService {
     if (projects.isEmpty())
       throw new NotFoundException("Projects not found by workspaceId "
               + workspaceId + " during " + operationName + " operation");
+  }
+
+  private void isProjectActive(Project project, String operationName) {
+    if (project.getArchiveState() != ArchiveState.ACTIVE)
+      throw new IllegalStateException("Cannot do " + operationName
+              + " operation because project with id " + project.getId() + " is archived");
   }
 }

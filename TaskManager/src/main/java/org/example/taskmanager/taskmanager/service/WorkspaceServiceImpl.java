@@ -90,16 +90,14 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
   @Override
   public List<ProjectDto> getProjects(UUID workspaceId) {
-    if (!workspaceRepository.existsById(workspaceId)) {
-      throw new NotFoundException("Workspace with id " + workspaceId
-              + " not found during getProjects operation");
-    }
+    Workspace workspace = getWorkspace(workspaceId, "getProjects");
+
+    isWorkspaceActive(workspace, "getProjects");
 
     List<Project> projects = projectRepository.findAllByWorkspaceId(workspaceId);
-    if (projects.isEmpty()) {
+    if (projects.isEmpty())
       throw new NotFoundException("Projects with workspaceId as parent id "
               + workspaceId + " not found");
-    }
 
     return projects.stream().map(projectMapper::toDto).toList();
   }
@@ -107,6 +105,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   @Override
   public WorkspaceDto changeName(UUID workspaceId, String newName) {
     Workspace workspace = getWorkspace(workspaceId, "changeName");
+
+    isWorkspaceActive(workspace, "changeName");
 
     workspace.setName(newName);
     workspaceRepository.save(workspace);
@@ -118,6 +118,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   public WorkspaceDto changeDescription(UUID workspaceId, String newDescription) {
     Workspace workspace = getWorkspace(workspaceId, "changeDescription");
 
+    isWorkspaceActive(workspace, "changeDescription");
+
     workspace.setDescription(newDescription);
     workspaceRepository.save(workspace);
 
@@ -128,5 +130,11 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     return workspaceRepository.findById(workspaceId)
             .orElseThrow(() -> new NotFoundException("Workspace with id "
                     + workspaceId + " not found during " + operationName + "operation"));
+  }
+
+  private void isWorkspaceActive(Workspace workspace, String operationName) {
+    if (workspace.getArchiveState() != ArchiveState.ACTIVE)
+      throw new IllegalStateException("Cannot do " + operationName
+              + " operation because workspace with id " + workspace.getId() + " is archived");
   }
 }

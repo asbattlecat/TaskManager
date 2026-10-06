@@ -58,7 +58,6 @@ public class BoardServiceImpl implements BoardService {
     this.boardMapper = boardMapper;
     this.boardColumnMapper = boardColumnMapper;
     this.taskMapper = taskMapper;
-
     this.domainEventPublisher = domainEventPublisher;
   }
 
@@ -141,15 +140,14 @@ public class BoardServiceImpl implements BoardService {
 
   @Override
   public List<TaskDto> getTasks(UUID boardId) {
-    if (!boardRepository.existsById(boardId)) {
-      throw new NotFoundException("Board with id " + boardId + " not found during getTasks operation");
-    }
+    Board board = getBoard(boardId, "getTasks");
+
+    isBoardActive(board, "getTasks");
 
     List<Task> tasks = taskRepository.findAllByBoardId(boardId);
-    if (tasks.isEmpty()) {
+    if (tasks.isEmpty())
       throw new NotFoundException("Tasks not found with board as parent with id "
               + boardId + " during getTasks operation");
-    }
 
     return tasks.stream().map(taskMapper::toDto).toList();
   }
@@ -256,5 +254,11 @@ public class BoardServiceImpl implements BoardService {
     if (boards.isEmpty())
       throw new NotFoundException("Boards with projectId " + projectId + " as parent id not found during "
               + operationName + " operation");
+  }
+
+  private void isBoardActive(Board board, String operationName) {
+    if (board.getArchiveState() != ArchiveState.ACTIVE)
+      throw new IllegalStateException("Cannot do " + operationName
+              + " operation because board with id " + board.getId() + " is archived");
   }
 }

@@ -12,6 +12,7 @@ import org.example.taskmanager.taskmanager.infrastructure.specification.TaskSpec
 import org.example.taskmanager.taskmanager.mapper.AuditEntityMapper;
 import org.example.taskmanager.taskmanager.mapper.CommentMapper;
 import org.example.taskmanager.taskmanager.mapper.TagMapper;
+import org.example.taskmanager.taskmanager.service.interfaces.AuditEntityService;
 import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceAccessChecker;
 import org.example.taskmanager.taskmanager.mapper.TaskMapper;
 import org.example.taskmanager.taskmanager.repository.*;
@@ -29,44 +30,41 @@ public class TaskServiceImpl implements TaskService {
   private final BoardColumnRepository boardColumnRepository;
   private final CommentRepository commentRepository;
   private final TagRepository tagRepository;
-  private final AuditEntityRepository auditEntityRepository;
 
   private final WorkspaceAccessChecker workspaceAccessChecker;
 
   private final TaskMapper taskMapper;
   private final TagMapper tagMapper;
   private final CommentMapper commentMapper;
-  private final AuditEntityMapper auditEntityMapper;
 
   private final DomainEventPublisher domainEventPublisher;
   private final BoardRepository boardRepository;
+  private final AuditEntityService auditEntityService;
 
   public TaskServiceImpl(
           TaskRepository taskRepository,
           BoardColumnRepository boardColumnRepository,
           CommentRepository commentRepository,
-          AuditEntityRepository auditEntityRepository,
           TagRepository tagRepository,
           WorkspaceAccessChecker workspaceAccessChecker,
           TaskMapper taskMapper,
           TagMapper tagMapper,
           CommentMapper commentMapper,
-          AuditEntityMapper auditEntityMapper,
           DomainEventPublisher domainEventPublisher,
-          BoardRepository boardRepository
+          BoardRepository boardRepository,
+          AuditEntityService auditEntityService
   ) {
     this.taskRepository = taskRepository;
     this.boardColumnRepository = boardColumnRepository;
     this.commentRepository = commentRepository;
     this.tagRepository = tagRepository;
-    this.auditEntityRepository = auditEntityRepository;
     this.workspaceAccessChecker = workspaceAccessChecker;
     this.taskMapper = taskMapper;
     this.commentMapper = commentMapper;
-    this.auditEntityMapper = auditEntityMapper;
     this.domainEventPublisher = domainEventPublisher;
     this.tagMapper = tagMapper;
     this.boardRepository = boardRepository;
+    this.auditEntityService = auditEntityService;
   }
 
 
@@ -94,7 +92,7 @@ public class TaskServiceImpl implements TaskService {
     task.archive(reason);
     taskRepository.save(task);
 
-    createAuditEntity(
+    auditEntityService.create(
             taskId,
             null,
             "archiveState",
@@ -121,7 +119,7 @@ public class TaskServiceImpl implements TaskService {
         task.archive(reason);
         taskRepository.save(task);
 
-        createAuditEntity(
+        auditEntityService.create(
                 task.getId(),
                 null,
                 "archiveState",
@@ -149,7 +147,7 @@ public class TaskServiceImpl implements TaskService {
     task.unarchive(reason);
     taskRepository.save(task);
 
-    createAuditEntity(
+    auditEntityService.create(
             taskId,
             null,
             "archiveState",
@@ -178,7 +176,7 @@ public class TaskServiceImpl implements TaskService {
         task.unarchive(reason);
         taskRepository.save(task);
 
-        createAuditEntity(
+        auditEntityService.create(
                 task.getId(),
                 null,
                 "archiveState",
@@ -198,8 +196,10 @@ public class TaskServiceImpl implements TaskService {
   public TaskDto changeName(UUID taskId, String newName, UUID userId) {
     Task task = getTask(taskId, "changeName");
 
+    isTaskActive(task, "changeName");
+
     if (!task.getName().equals(newName)) {
-      createAuditEntity(
+      auditEntityService.create(
               taskId,
               userId,
               "name",
@@ -218,8 +218,10 @@ public class TaskServiceImpl implements TaskService {
   public TaskDto changeDescription(UUID taskId, String newDescription, UUID userId) {
     Task task = getTask(taskId, "changeDescription");
 
+    isTaskActive(task, "changeDescription");
+
     if (!task.getDescription().equals(newDescription)) {
-      createAuditEntity(
+      auditEntityService.create(
               taskId,
               userId,
               "description",
@@ -238,8 +240,10 @@ public class TaskServiceImpl implements TaskService {
   public TaskDto changePriority(UUID taskId, TaskPriority newPriority, UUID userId) {
     Task task = getTask(taskId, "changePriority");
 
+    isTaskActive(task, "changePriority");
+
     if (!task.getPriority().equals(newPriority)) {
-      createAuditEntity(
+      auditEntityService.create(
               taskId,
               userId,
               "priority",
@@ -258,6 +262,8 @@ public class TaskServiceImpl implements TaskService {
   public TaskDto changeColumn(UUID taskId, UUID newColumnId) {
     Task task = getTask(taskId, "changeColumn");
 
+    isTaskActive(task, "changeColumn");
+
     if (!boardColumnRepository.findById(newColumnId).isPresent()) {
       throw new NotFoundException("Column with id " + newColumnId + " not found");
     }
@@ -273,8 +279,10 @@ public class TaskServiceImpl implements TaskService {
   public TaskDto changeDeadline(UUID taskId, Instant newDeadline, UUID userId) {
     Task task = getTask(taskId, "changeDeadline");
 
+    isTaskActive(task, "changeDeadline");
+
     if (!task.getDeadline().isAfter(newDeadline) && !task.getDeadline().equals(newDeadline)) {
-      createAuditEntity(
+      auditEntityService.create(
               taskId,
               userId,
               "deadline",
@@ -293,8 +301,10 @@ public class TaskServiceImpl implements TaskService {
   public TaskDto changeStatus(UUID taskId, TaskStatus newStatus, UUID userId) {
     Task task = getTask(taskId, "changeStatus");
 
+    isTaskActive(task, "changeStatus");
+
     if (!task.getStatus().equals(newStatus)) {
-      createAuditEntity(
+      auditEntityService.create(
               taskId,
               userId,
               "status",
@@ -313,10 +323,12 @@ public class TaskServiceImpl implements TaskService {
   public TaskDto setAssignee(UUID taskId, UUID workspaceMemberId, UUID userId) {
     Task task = getTask(taskId, "setAssignee");
 
+    isTaskActive(task, "setAssignee");
+
     workspaceAccessChecker.check(task, workspaceMemberId);
 
     if (!task.getAssigneeId().equals(workspaceMemberId)) {
-      createAuditEntity(
+      auditEntityService.create(
               taskId,
               userId,
               "assignee",
@@ -368,23 +380,13 @@ public class TaskServiceImpl implements TaskService {
 
   @Override
   public List<AuditEntityDto> getTaskChangesHistory(UUID taskId) {
-    List<AuditEntity> entities = auditEntityRepository.findAllByTaskIdOrderByTimestampAsc(taskId);
-
-    if (entities.isEmpty())
-      throw new NotFoundException("History of task changes with taskId " + taskId + " is empty");
-
-    return entities.stream().map(auditEntityMapper::toDto).toList();
+    return auditEntityService.getTaskChangesHistory(taskId);
   }
 
   private Task getTask(UUID taskId, String operationName) {
     return taskRepository.findById(taskId)
             .orElseThrow(() -> new NotFoundException("Task with id " + taskId + " not found during "
                     + operationName + "operation"));
-  }
-
-  private void createAuditEntity(UUID taskId, UUID userId, String fieldName, String oldValue, String newValue) {
-    AuditEntity entity = new AuditEntity(taskId, userId, fieldName, oldValue, newValue);
-    auditEntityRepository.save(entity);
   }
 
   private Board getParent(UUID boardId, String operationName) {
@@ -403,5 +405,11 @@ public class TaskServiceImpl implements TaskService {
     if (tasks.isEmpty())
       throw new NotFoundException("Tasks with boardId " + boardId
               + " as parent id not found during " + operationName + " operation");
+  }
+
+  private void isTaskActive(Task task, String operationName) {
+    if (task.getArchiveState() != ArchiveState.ACTIVE)
+      throw new IllegalStateException("Cannot do " + operationName
+              + " operation because task with id " + task.getId() + " is archived");
   }
 }
