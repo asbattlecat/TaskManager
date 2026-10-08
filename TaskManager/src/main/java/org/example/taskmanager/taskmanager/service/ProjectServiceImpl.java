@@ -63,15 +63,14 @@ public class ProjectServiceImpl implements ProjectService {
     Project project = new Project(workspaceId, name, description);
     projectRepository.save(project);
 
-    log.debug("project created and saved to database, id={}, workspaceId={}, name={}, description={}",
-            project.getId(), workspaceId, name, description);
+    log.debug("project created and saved in database, projectId={}", project.getId());
     return projectMapper.toDto(project);
   }
 
   @Transactional
   @Override
   public ProjectDto archive(UUID projectId, ArchiveReason reason) {
-    log.info("project archive starts, id={}, reason={}", projectId, reason);
+    log.info("project archive starts, projectId={}, reason={}", projectId, reason);
     Project project = getProject(projectId, "archive");
 
     project.archive(reason);
@@ -79,7 +78,7 @@ public class ProjectServiceImpl implements ProjectService {
     project.getEvents().forEach(domainEventPublisher::publish);;
     project.clearEvents();
 
-    log.debug("project archive completed, id={}, reason={}", projectId, reason);
+    log.debug("project archive completed, projectId={}, reason={}", projectId, reason);
     return projectMapper.toDto(project);
   }
 
@@ -107,7 +106,7 @@ public class ProjectServiceImpl implements ProjectService {
   @Transactional
   @Override
   public ProjectDto unarchive(UUID projectId, UnarchiveReason reason) {
-    log.info("project unarchive starts, id={}, reason={}", projectId, reason);
+    log.info("project unarchive starts, projectId={}, reason={}", projectId, reason);
 
     Project project = getProject(projectId, "unarchive");
     Workspace parent = getParent(project.getWorkspaceId(), "unarchive");
@@ -119,7 +118,7 @@ public class ProjectServiceImpl implements ProjectService {
     project.getEvents().forEach(domainEventPublisher::publish);
     project.clearEvents();
 
-    log.debug("project unarchive completed, id={}, reason={}", projectId, reason);
+    log.debug("project unarchive completed, projectId={}, reason={}", projectId, reason);
     return projectMapper.toDto(project);
   }
 
@@ -193,26 +192,35 @@ public class ProjectServiceImpl implements ProjectService {
 
   private Project getProject(UUID projectId, String operationName) {
     return projectRepository.findById(projectId)
-            .orElseThrow(() -> new NotFoundException("Project with id "
-                    + projectId + " not found during "
-                    + operationName + "operation"));
+            .orElseThrow(() -> {
+              log.error("project not found during {}, projectId={}", operationName, projectId);
+              return new NotFoundException("Project with id " + projectId
+                      + " not found during " + operationName + "operation");
+            });
   }
 
   private Workspace getParent(UUID workspaceId,String operationName) {
     return workspaceRepository.findById(workspaceId)
-            .orElseThrow(() -> new NotFoundException("Workspace as parent of project with id "
-                    + workspaceId + " not found during " + operationName + " operation"));
+            .orElseThrow(() -> {
+              log.error("workspace not found during {}, workspaceId={}", operationName, workspaceId);
+              return new NotFoundException("Workspace as parent of project with id "
+                      + workspaceId + " not found during " + operationName + " operation");
+            });
   }
 
   private void checkParentBeforeUnarchive(Workspace parent) {
-    if (parent.getArchiveState() != ArchiveState.ACTIVE)
+    if (parent.getArchiveState() != ArchiveState.ACTIVE) {
+      log.error("cannot unarchive project, workspace (parent) is archived, worksapaceId={}", parent.getId());
       throw new IllegalStateException("Cannot unarchive project because workspace (parent) with id "
               + parent.getId() + " is archived");
+    }
   }
 
   private void isProjectActive(Project project, String operationName) {
-    if (project.getArchiveState() != ArchiveState.ACTIVE)
+    if (project.getArchiveState() != ArchiveState.ACTIVE) {
+      log.error("cannot do {}, project is archived, projectId={}", operationName, project.getId());
       throw new IllegalStateException("Cannot do " + operationName
               + " operation because project with id " + project.getId() + " is archived");
+    }
   }
 }

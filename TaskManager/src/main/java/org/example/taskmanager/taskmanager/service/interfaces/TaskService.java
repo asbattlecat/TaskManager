@@ -27,6 +27,6 @@ public interface TaskService {
   TaskDto setAssignee(UUID taskId, UUID workspaceMemberId, UUID userId);
   CommentDto addComment(UUID taskId, UUID workspaceMemberId, String content);
   TagDto addTag(UUID taskId, String name, TagColor color);
-  List<TaskDto> filter(TaskStatus status, UUID assigneeId, Tag tag);
+  List<TaskDto> filter(UUID boardId, TaskStatus status, UUID assigneeId, Tag tag);
   List<AuditEntityDto> getTaskChangesHistory(UUID taskId);
 }

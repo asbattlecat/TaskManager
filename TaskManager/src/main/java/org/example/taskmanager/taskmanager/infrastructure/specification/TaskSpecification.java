@@ -9,6 +9,11 @@ import org.springframework.data.jpa.domain.Specification;
 import java.util.UUID;
 
 public class TaskSpecification {
+  public static Specification<Task> boardContains(UUID boardId) {
+    return ((root, query, criteriaBuilder) ->
+            boardId == null ? null : criteriaBuilder.equal(root.get("boardId"), boardId));
+  }
+
   public static Specification<Task> statusContains(TaskStatus status) {
     return (root, query, cb) ->
             status == null ? null : cb.equal(root.get("status"), status);

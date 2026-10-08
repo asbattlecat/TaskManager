@@ -66,25 +66,26 @@ public class BoardServiceImpl implements BoardService {
   @Transactional
   @Override
   public BoardDto create(UUID projectId, String name, String description, BoardType boardType) {
-    log.info("creating board, projectId={}, name={}, description-{}, boardType={}",
+    log.info("creating board, projectId={}, name={}, description={}, boardType={}",
             projectId, name, description, boardType);
 
-    if (!projectRepository.existsById(projectId))
+    if (!projectRepository.existsById(projectId)) {
+      log.error("board was not created, project not found, projectId={}", projectId);
       throw new NotFoundException("Project with id " + projectId + " not found during board create operation");
+    }
 
     Board board = new Board(projectId, name, description, boardType);
 
     boardRepository.save(board);
 
-    log.info("board created and saved to database, id={}, projectId={}, name={}, description-{}, boardType={}",
-            board.getId(), projectId, name, description, boardType);
+    log.info("board created and saved in database, boardId={}", board.getId());
     return boardMapper.toDto(board);
   }
 
   @Transactional
   @Override
   public BoardDto archive(UUID boardId, ArchiveReason reason) {
-    log.info("board archive starts, id={}, reason={}", boardId, reason);
+    log.info("board archive starts, boardId={}, reason={}", boardId, reason);
     Board board = getBoard(boardId, "archive");
 
     board.archive(reason);
@@ -92,7 +93,7 @@ public class BoardServiceImpl implements BoardService {
     board.getEvents().forEach(domainEventPublisher::publish);
     board.clearEvents();
 
-    log.debug("board archive completed, id={}, reason={}", boardId, reason);
+    log.debug("board archive completed, boardId={}, reason={}", boardId, reason);
     return boardMapper.toDto(board);
   }
 
@@ -120,7 +121,7 @@ public class BoardServiceImpl implements BoardService {
   @Transactional
   @Override
   public BoardDto unarchive(UUID boardId, UnarchiveReason reason) {
-    log.info("board unarchive starts, id={}, reason={}", boardId, reason);
+    log.info("board unarchive starts, boardId={}, reason={}", boardId, reason);
     Board board = getBoard(boardId, "unarchive");
 
     Project parent = getParent(board.getProjectId(), "unarchive");
@@ -131,7 +132,7 @@ public class BoardServiceImpl implements BoardService {
     board.getEvents().forEach(domainEventPublisher::publish);
     board.clearEvents();
 
-    log.debug("board unarchive completed, id={}, reason={}", boardId, reason);
+    log.debug("board unarchive completed, boardId={}, reason={}", boardId, reason);
     return boardMapper.toDto(board);
   }
 
@@ -202,7 +203,7 @@ public class BoardServiceImpl implements BoardService {
    * @param boardId айдишник борда
    * @param oldPosition старая позиция элемента, которую нужно заменить на новую
    * @param newPosition новая позиция
-   * @return
+   * @return List of BoardColumnDto - отсортированные колонки с обновленные порядком
    */
   @Transactional
   @Override
@@ -260,25 +261,35 @@ public class BoardServiceImpl implements BoardService {
 
   private Board getBoard(UUID boardId, String operationName) {
     return boardRepository.findById(boardId)
-            .orElseThrow(() -> new NotFoundException("Board with id " + boardId + " not found during "
-                    + operationName + " operation"));
+            .orElseThrow(() -> {
+              log.error("board not found, boardId={}, operationName={}", boardId, operationName);
+              return new NotFoundException("Board with id " + boardId + " not found during "
+                      + operationName + " operation");
+            });
   }
 
   private Project getParent(UUID projectId, String operationName) {
     return projectRepository.findById(projectId)
-            .orElseThrow(() -> new NotFoundException("Project with id " + projectId
-                    + " as parent of board not found during " + operationName + " operation"));
+            .orElseThrow(() -> {
+              log.error("project not found, projectId={}, operationName={}", projectId, operationName);
+              return new NotFoundException("Project with id " + projectId
+                      + " as parent of board not found during " + operationName + " operation");
+            });
   }
 
   private void checkParentBeforeUnarchive(Project parent) {
-    if (parent.getArchiveState() != ArchiveState.ACTIVE)
+    if (parent.getArchiveState() != ArchiveState.ACTIVE) {
+      log.error("cannot unarchive board, project (parent) is archived, parentId={}", parent.getId());
       throw new IllegalStateException("Cannot unarchive boards because project (parent) with id "
               + parent.getId() + " is archived");
+    }
   }
 
   private void isBoardActive(Board board, String operationName) {
-    if (board.getArchiveState() != ArchiveState.ACTIVE)
+    if (board.getArchiveState() != ArchiveState.ACTIVE) {
+      log.error("cannot do {}, board is archived, boardId={}", operationName, board.getId());
       throw new IllegalStateException("Cannot do " + operationName
               + " operation because board with id " + board.getId() + " is archived");
+    }
   }
 }

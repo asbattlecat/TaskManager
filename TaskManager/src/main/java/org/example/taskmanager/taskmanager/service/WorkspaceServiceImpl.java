@@ -54,15 +54,14 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     Workspace workspace = new Workspace(name, description, ownerId);
     workspaceRepository.save(workspace);
 
-    log.debug("workspace created and saved to database, id={}, name={}, description={}, ownerId={}",
-            workspace.getId(), name, description, ownerId);
+    log.debug("workspace created and saved in database, workspaceId={}", workspace.getId());
     return workspaceMapper.toDto(workspace);
   }
 
   @Transactional
   @Override
   public WorkspaceDto archive(UUID workspaceId, ArchiveReason reason) {
-    log.info("workspace archive starts, id={}, reason={}", workspaceId, reason);
+    log.info("workspace archive starts, workspaceId={}, reason={}", workspaceId, reason);
     Workspace workspace = getWorkspace(workspaceId, "archive");
 
     if (reason == ArchiveReason.PARENT_ARCHIVED) {
@@ -76,18 +75,18 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     workspace.getEvents().forEach(domainEventPublisher::publish);
     workspace.clearEvents();
 
-    log.debug("workspace archive completed, id={}, reason={}", workspaceId, reason);
+    log.debug("workspace archive completed, workspaceId={}, reason={}", workspaceId, reason);
     return workspaceMapper.toDto(workspace);
   }
 
   @Transactional
   @Override
   public WorkspaceDto unarchive(UUID workspaceId, UnarchiveReason reason) {
-    log.info("workspace unarchive starts, id={}, reason={}", workspaceId, reason);
+    log.info("workspace unarchive starts, workspaceId={}, reason={}", workspaceId, reason);
     Workspace workspace = getWorkspace(workspaceId, "unarchive");
 
     if (reason == UnarchiveReason.CASCADE) {
-      log.error("cannot unarchive workspace with id={}, reason is incorrect, reason={}", workspaceId, reason);;
+      log.error("cannot unarchive workspace with workspaceId={}, reason is incorrect, reason={}", workspaceId, reason);;
       throw new IllegalArgumentException("Workspace with id "
               + workspaceId + " cannot be archived by cascade mechanics");
     }
