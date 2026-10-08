@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.domain.event.TaskArchivedEvent;
 import org.example.taskmanager.taskmanager.domain.event.TaskUnarchivedEvent;
 import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @Entity
+@Slf4j
 public class Task extends AggregateRoot {
   @Id
   private UUID id;
@@ -86,6 +88,7 @@ public class Task extends AggregateRoot {
 
   public void archive(ArchiveReason reason) {
     if (archiveState != ArchiveState.ACTIVE) {
+      log.error("cannot archive task, it is already archived, taskId={}", id);
       throw new IllegalStateException("Task is already archived");
     }
 
@@ -100,6 +103,7 @@ public class Task extends AggregateRoot {
 
   public void unarchive(UnarchiveReason reason) {
     if (archiveState == ArchiveState.ACTIVE) {
+      log.error("cannot unarchive task, it is already active, taskId={}", id);
       throw new IllegalStateException("Task is already active, cannot unarchive");
     }
 

@@ -67,7 +67,6 @@ public class TaskServiceImpl implements TaskService {
     this.tagMapper = tagMapper;
   }
 
-
   @Transactional
   @Override
   public TaskDto create(UUID boardId, UUID columnId, String name, String description,

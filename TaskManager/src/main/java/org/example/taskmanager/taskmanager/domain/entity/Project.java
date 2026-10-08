@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.domain.event.ProjectArchivedEvent;
 import org.example.taskmanager.taskmanager.domain.event.ProjectUnarchivedEvent;
 import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
@@ -22,6 +23,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @Entity
+@Slf4j
 public class Project extends AggregateRoot {
   @Id
   private UUID id;
@@ -61,6 +63,7 @@ public class Project extends AggregateRoot {
 
   public void archive(@NotNull ArchiveReason reason) {
     if (archiveState != ArchiveState.ACTIVE) {
+      log.error("cannot archive project, it is already archived, projectId={}", id);
       throw new IllegalStateException("Project is already archived");
     }
 
@@ -75,6 +78,7 @@ public class Project extends AggregateRoot {
 
   public void unarchive(@NotNull UnarchiveReason reason) {
     if (archiveState == ArchiveState.ACTIVE) {
+      log.error("cannot unarchive project, it is already active, projectId={}", id);
       throw new IllegalStateException("Project is already active, cannot unarchive");
     }
 

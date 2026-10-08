@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.domain.event.BoardArchivedEvent;
 import org.example.taskmanager.taskmanager.domain.event.BoardUnarchivedEvent;
 import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
@@ -23,6 +24,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @Entity
+@Slf4j
 public class Board extends AggregateRoot {
   @Id
   private UUID id;
@@ -66,6 +68,7 @@ public class Board extends AggregateRoot {
 
   public void archive(ArchiveReason reason) {
     if (archiveState != ArchiveState.ACTIVE) {
+      log.error("cannot archive board, it is already archived, boardId={}", id);
       throw new IllegalStateException("Board is already archived");
     }
 
@@ -80,6 +83,7 @@ public class Board extends AggregateRoot {
 
   public void unarchive(UnarchiveReason reason) {
     if (archiveState == ArchiveState.ACTIVE) {
+      log.error("cannot unarchive board, it is already active, boardId={}", id);
       throw new IllegalStateException("Board is already active, cannot unarchive");
     }
     if (!canBeUnarchived(reason))

@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.domain.event.WorkspaceArchivedEvent;
 import org.example.taskmanager.taskmanager.domain.event.WorkspaceUnarchivedEvent;
 import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
@@ -22,6 +23,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
+@Slf4j
 public class Workspace extends AggregateRoot {
   @Id
   private UUID id;
@@ -62,6 +64,7 @@ public class Workspace extends AggregateRoot {
 
   public void archive(@NotNull ArchiveReason reason) {
     if (archiveState != ArchiveState.ACTIVE) {
+      log.error("cannot archive workspace, it is already archived, workspaceId={}", id);
       throw new IllegalStateException("Workspace is already archived");
     }
 
@@ -76,6 +79,7 @@ public class Workspace extends AggregateRoot {
 
   public void unarchive(@NotNull UnarchiveReason reason) {
     if (archiveState == ArchiveState.ACTIVE) {
+      log.error("cannot unarchive workspace, it is already active, workspaceId={}", id);
       throw new IllegalStateException("Workspace is already active, cannot unarchive");
     }
 

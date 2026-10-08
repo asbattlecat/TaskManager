@@ -164,7 +164,7 @@ public class ProjectServiceImpl implements ProjectService {
   @Override
   public ProjectDto changeName(UUID projectId, String newName) {
     CustomLogger.operationStarts("project", "changeName", "projectId", projectId);
-    Project project = getProject(projectId, "change name");
+    Project project = getProject(projectId, "changeName");
 
     isProjectActive(project, "changeName");
 
@@ -179,7 +179,7 @@ public class ProjectServiceImpl implements ProjectService {
   @Override
   public ProjectDto changeDescription(UUID projectId, String newDescription) {
     CustomLogger.operationStarts("project", "changeDescription", "projectId", projectId);
-    Project project = getProject(projectId, "change description");
+    Project project = getProject(projectId, "changeDescription");
 
     isProjectActive(project, "changeDescription");
 
