@@ -3,6 +3,7 @@ package org.example.taskmanager.taskmanager.domain.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -42,6 +43,9 @@ public class Project extends AggregateRoot {
 
   @Column
   private Instant updatedAt;
+
+  @Version
+  private Long version;
 
   public Project(@NotNull UUID workspaceId, @NotNull String name, String description) {
     id = UUID.randomUUID();

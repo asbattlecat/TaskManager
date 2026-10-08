@@ -3,6 +3,7 @@ package org.example.taskmanager.taskmanager.domain.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -47,6 +48,9 @@ public class Board extends AggregateRoot {
   @Column
   private Instant updatedAt;
 
+  @Version
+  private Long version;
+
   public Board(@NotNull UUID projectId, @NotNull String name, String description, @NotNull BoardType type) {
     id = UUID.randomUUID();
 
@@ -78,6 +82,8 @@ public class Board extends AggregateRoot {
     if (archiveState == ArchiveState.ACTIVE) {
       throw new IllegalStateException("Board is already active, cannot unarchive");
     }
+    if (!canBeUnarchived(reason))
+      throw new IllegalStateException("Board cannot be unarchived");
 
     archiveState = ArchiveState.ACTIVE;
 

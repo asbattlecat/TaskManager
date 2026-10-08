@@ -9,7 +9,6 @@ import org.example.taskmanager.taskmanager.domain.enums.*;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEventPublisher;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.infrastructure.specification.TaskSpecification;
-import org.example.taskmanager.taskmanager.mapper.AuditEntityMapper;
 import org.example.taskmanager.taskmanager.mapper.CommentMapper;
 import org.example.taskmanager.taskmanager.mapper.TagMapper;
 import org.example.taskmanager.taskmanager.service.interfaces.AuditEntityService;
@@ -19,6 +18,7 @@ import org.example.taskmanager.taskmanager.repository.*;
 import org.example.taskmanager.taskmanager.service.interfaces.TaskService;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -68,6 +68,7 @@ public class TaskServiceImpl implements TaskService {
   }
 
 
+  @Transactional
   @Override
   public TaskDto create(UUID boardId, UUID columnId, String name, String description,
                         TaskStatus status, TaskPriority priority, UUID assigneeId,
@@ -84,6 +85,7 @@ public class TaskServiceImpl implements TaskService {
     return taskMapper.toDto(task);
   }
 
+  @Transactional
   @Override
   public TaskDto archive(UUID taskId, ArchiveReason reason) {
     Task task = getTask(taskId, "archive");
@@ -106,11 +108,11 @@ public class TaskServiceImpl implements TaskService {
     return taskMapper.toDto(task);
   }
 
+  @Transactional
   @Override
   public List<TaskDto> archiveByBoard(UUID boardId, ArchiveReason reason) {
-    List<Task> tasks = taskRepository.findAllByBoardId(boardId);
-
-    checkTasksFound(tasks, boardId, "archiveByBoard");
+    List<Task> tasks = taskRepository
+            .findTasksByBoardIdWithPessimisticWriteLock(boardId);
 
     for (Task task : tasks) {
       if (task.getArchiveState() == ArchiveState.ACTIVE) {
@@ -135,6 +137,7 @@ public class TaskServiceImpl implements TaskService {
     return tasks.stream().map(taskMapper::toDto).toList();
   }
 
+  @Transactional
   @Override
   public TaskDto unarchive(UUID taskId, UnarchiveReason reason) {
     Task task = getTask(taskId, "unarchive");
@@ -161,10 +164,11 @@ public class TaskServiceImpl implements TaskService {
     return taskMapper.toDto(task);
   }
 
+  @Transactional
   @Override
   public List<TaskDto> unarchiveByBoard(UUID boardId, UnarchiveReason reason) {
-    List<Task> tasks = taskRepository.findAllByBoardId(boardId);
-    checkTasksFound(tasks, boardId, "unarchiveByBoard");
+    List<Task> tasks = taskRepository
+            .findTasksByBoardIdWithPessimisticWriteLock(boardId);
 
     Board parent = getParent(boardId, "unarchiveByBoard");
     checkParentBeforeUnarchive(parent);
@@ -192,6 +196,7 @@ public class TaskServiceImpl implements TaskService {
     return tasks.stream().map(taskMapper::toDto).toList();
   }
 
+  @Transactional
   @Override
   public TaskDto changeName(UUID taskId, String newName, UUID userId) {
     Task task = getTask(taskId, "changeName");
@@ -214,6 +219,7 @@ public class TaskServiceImpl implements TaskService {
     return taskMapper.toDto(task);
   }
 
+  @Transactional
   @Override
   public TaskDto changeDescription(UUID taskId, String newDescription, UUID userId) {
     Task task = getTask(taskId, "changeDescription");
@@ -236,6 +242,7 @@ public class TaskServiceImpl implements TaskService {
     return taskMapper.toDto(task);
   }
 
+  @Transactional
   @Override
   public TaskDto changePriority(UUID taskId, TaskPriority newPriority, UUID userId) {
     Task task = getTask(taskId, "changePriority");
@@ -258,6 +265,7 @@ public class TaskServiceImpl implements TaskService {
     return taskMapper.toDto(task);
   }
 
+  @Transactional
   @Override
   public TaskDto changeColumn(UUID taskId, UUID newColumnId) {
     Task task = getTask(taskId, "changeColumn");
@@ -275,6 +283,7 @@ public class TaskServiceImpl implements TaskService {
     return taskMapper.toDto(task);
   }
 
+  @Transactional
   @Override
   public TaskDto changeDeadline(UUID taskId, Instant newDeadline, UUID userId) {
     Task task = getTask(taskId, "changeDeadline");
@@ -297,6 +306,7 @@ public class TaskServiceImpl implements TaskService {
     return taskMapper.toDto(task);
   }
 
+  @Transactional
   @Override
   public TaskDto changeStatus(UUID taskId, TaskStatus newStatus, UUID userId) {
     Task task = getTask(taskId, "changeStatus");
@@ -319,6 +329,7 @@ public class TaskServiceImpl implements TaskService {
     return taskMapper.toDto(task);
   }
 
+  @Transactional
   @Override
   public TaskDto setAssignee(UUID taskId, UUID workspaceMemberId, UUID userId) {
     Task task = getTask(taskId, "setAssignee");
@@ -343,6 +354,7 @@ public class TaskServiceImpl implements TaskService {
     return taskMapper.toDto(task);
   }
 
+  @Transactional
   @Override
   public CommentDto addComment(UUID taskId, UUID workspaceMemberId, String content) {
     Task task = getTask(taskId, "addComment");
@@ -355,6 +367,7 @@ public class TaskServiceImpl implements TaskService {
     return commentMapper.toDto(comment);
   }
 
+  @Transactional
   @Override
   public TagDto addTag(UUID taskId, String name, TagColor color) {
     getTask(taskId, "addTag");
@@ -365,6 +378,7 @@ public class TaskServiceImpl implements TaskService {
     return tagMapper.toDto(tag);
   }
 
+  @Transactional
   @Override
   public List<TaskDto> filter(TaskStatus status, UUID assigneeId, Tag tag) {
     Specification<Task> spec = Specification.where((Specification<Task>) null);
@@ -378,6 +392,7 @@ public class TaskServiceImpl implements TaskService {
     return tasks.stream().map(taskMapper::toDto).toList();
   }
 
+  @Transactional
   @Override
   public List<AuditEntityDto> getTaskChangesHistory(UUID taskId) {
     return auditEntityService.getTaskChangesHistory(taskId);
@@ -385,8 +400,8 @@ public class TaskServiceImpl implements TaskService {
 
   private Task getTask(UUID taskId, String operationName) {
     return taskRepository.findById(taskId)
-            .orElseThrow(() -> new NotFoundException("Task with id " + taskId + " not found during "
-                    + operationName + "operation"));
+            .orElseThrow(() -> new NotFoundException("Task with id " + taskId
+                    + " not found during " + operationName + "operation"));
   }
 
   private Board getParent(UUID boardId, String operationName) {
@@ -399,12 +414,6 @@ public class TaskServiceImpl implements TaskService {
     if (parent.getArchiveState() != ArchiveState.ACTIVE)
       throw new IllegalStateException("Cannot unarchive tasks because board (parent) with id "
               + parent.getId() + " is archived");
-  }
-
-  private void checkTasksFound(List<Task> tasks, UUID boardId, String operationName) {
-    if (tasks.isEmpty())
-      throw new NotFoundException("Tasks with boardId " + boardId
-              + " as parent id not found during " + operationName + " operation");
   }
 
   private void isTaskActive(Task task, String operationName) {

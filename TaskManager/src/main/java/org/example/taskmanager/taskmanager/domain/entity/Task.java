@@ -61,6 +61,9 @@ public class Task extends AggregateRoot {
   @Column
   private Instant updatedAt;
 
+  @Version
+  private Long version;
+
   public Task(@NotNull UUID boardId, UUID columnId, @NotNull String name, String description,
               @NotNull TaskStatus status, @NotNull TaskPriority priority, UUID assigneeId,
               @NotNull UUID creatorId, Instant deadline) {

@@ -1,7 +1,5 @@
 package org.example.taskmanager.taskmanager.domain.aggregate;
 
-import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
-import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEvent;
 
 import java.util.ArrayList;
