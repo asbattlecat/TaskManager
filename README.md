@@ -37,7 +37,7 @@
 - WorkspaceMember уникален по userId
 - OWNER не может быть удалён без передачи роли
 - WorkspaceMember создаётся только для существующего User
-- WorkspaceMember удаляется при деактивации User
+**_`- WorkspaceMember удаляется при деактивации User`_**
 
 ### ProjectAggregate
 Корень: Project  

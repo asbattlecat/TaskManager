@@ -4,17 +4,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.controller.dto.response.ProjectDto;
 import org.example.taskmanager.taskmanager.controller.dto.response.WorkspaceDto;
 import org.example.taskmanager.taskmanager.domain.entity.Project;
+import org.example.taskmanager.taskmanager.domain.entity.User;
 import org.example.taskmanager.taskmanager.domain.entity.Workspace;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
+import org.example.taskmanager.taskmanager.domain.enums.WorkspaceRole;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEventPublisher;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.infrastructure.logs.CustomLogger;
 import org.example.taskmanager.taskmanager.mapper.ProjectMapper;
 import org.example.taskmanager.taskmanager.mapper.WorkspaceMapper;
 import org.example.taskmanager.taskmanager.repository.ProjectRepository;
+import org.example.taskmanager.taskmanager.repository.UserRepository;
 import org.example.taskmanager.taskmanager.repository.WorkspaceRepository;
+import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceMemberService;
 import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,24 +29,30 @@ import java.util.UUID;
 @Slf4j
 @Service
 public class WorkspaceServiceImpl implements WorkspaceService {
+  private final WorkspaceMemberService workspaceMemberService;
   private final DomainEventPublisher domainEventPublisher;
   private final WorkspaceRepository workspaceRepository;
   private final ProjectRepository projectRepository;
   private final WorkspaceMapper workspaceMapper;
+  private final UserRepository userRepository;
   private final ProjectMapper projectMapper;
 
 
   public WorkspaceServiceImpl(
+          WorkspaceMemberService workspaceMemberService,
           DomainEventPublisher domainEventPublisher,
           WorkspaceRepository workspaceRepository,
           ProjectRepository projectRepository,
           WorkspaceMapper workspaceMapper,
+          UserRepository userRepository,
           ProjectMapper projectMapper
   ) {
+    this.workspaceMemberService = workspaceMemberService;
     this.domainEventPublisher = domainEventPublisher;
     this.workspaceRepository = workspaceRepository;
     this.projectRepository = projectRepository;
     this.workspaceMapper = workspaceMapper;
+    this.userRepository = userRepository;
     this.projectMapper = projectMapper;
   }
 
@@ -51,8 +61,18 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   public WorkspaceDto create(String name, String description, UUID ownerId) {
     log.info("creating workspace, name={}, description={}, ownerId={}", name, description, ownerId);
 
+    // правило агрегата: workspace имеет OWNER. поэтому создаем owner-а
+    if (!userRepository.existsById(ownerId)) {
+      log.error("user not found, userId={}", ownerId);
+      throw new NotFoundException("User with id " + ownerId
+              + " not found during workspace create operation");
+    }
+
     Workspace workspace = new Workspace(name, description, ownerId);
     workspaceRepository.save(workspace);
+
+    // создателя рабочего пространства делаем админом
+    workspaceMemberService.create(workspace.getId(), ownerId, WorkspaceRole.ADMIN);
 
     log.debug("workspace created and saved in database, workspaceId={}", workspace.getId());
     return workspaceMapper.toDto(workspace);
@@ -139,7 +159,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
     workspace.setDescription(newDescription);
     workspaceRepository.save(workspace);
-
 
     CustomLogger.operationCompleted("workspace", "changeDescription", "workspaceId", workspaceId);
     return workspaceMapper.toDto(workspace);

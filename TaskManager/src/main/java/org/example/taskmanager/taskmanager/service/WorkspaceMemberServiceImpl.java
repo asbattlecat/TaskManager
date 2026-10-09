@@ -5,6 +5,7 @@ import org.example.taskmanager.taskmanager.controller.dto.response.WorkspaceMemb
 import org.example.taskmanager.taskmanager.domain.entity.WorkspaceMember;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceRole;
 import org.example.taskmanager.taskmanager.infrastructure.exception.AlreadyExistsException;
+import org.example.taskmanager.taskmanager.infrastructure.exception.EntityInUseException;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.infrastructure.logs.CustomLogger;
 import org.example.taskmanager.taskmanager.mapper.WorkspaceMemberMapper;
@@ -13,6 +14,7 @@ import org.example.taskmanager.taskmanager.repository.WorkspaceMemberRepository;
 import org.example.taskmanager.taskmanager.repository.WorkspaceRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceMemberService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -37,18 +39,17 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
     this.userRepository = userRepository;
   }
 
+  @Transactional
   @Override
   public WorkspaceMemberDto create(UUID workspaceId, UUID userId, WorkspaceRole role) {
     log.info("creating workspace member, workspaceId={}, userId={}, role={}", workspaceId, userId, role);
     userAndWorkspaceExists(userId, workspaceId);
 
-    // workspace member должен быть уникален для workspace
     if (workspaceMemberRepository.existsByUserIdAndWorkspaceId(userId, workspaceId)) {
       log.error("workspace member already exists, workspaceId={}, userId={}", workspaceId, userId);
       throw new AlreadyExistsException("WorkspaceMember with workspaceId " + workspaceId
               + " and userId " + userId + " already exists");
     }
-
 
     WorkspaceMember workspaceMember = new WorkspaceMember(workspaceId, userId, role);
     workspaceMemberRepository.save(workspaceMember);
@@ -57,6 +58,7 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
     return workspaceMemberMapper.toDto(workspaceMember);
   }
 
+  @Transactional
   @Override
   public WorkspaceMemberDto setRoleToMember(UUID memberId, WorkspaceRole role) {
     CustomLogger.operationStarts("workspaceMember", "setRoleToMember", "memberId", memberId);
@@ -70,6 +72,7 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
     return workspaceMemberMapper.toDto(workspaceMember);
   }
 
+  @Transactional
   @Override
   public List<WorkspaceMemberDto> getMembers(UUID workspaceId) {
     CustomLogger.operationStarts("workspaceMember", "getMembers", "workspaceId", workspaceId);
@@ -80,11 +83,18 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
     return members.stream().map(workspaceMemberMapper::toDto).toList();
   }
 
+  @Transactional
   @Override
   public WorkspaceMemberDto delete(UUID workspaceMemberId) {
     CustomLogger.operationStarts("workspaceMember", "delete",
             "workspaceMemberId", workspaceMemberId);
     WorkspaceMember member = getMember(workspaceMemberId);
+
+    if (member.getRole() == WorkspaceRole.OWNER) {
+      log.error("workspace member not deleted, he is owner. workspaceMemberId={}", workspaceMemberId);
+      throw new EntityInUseException("Cannot delete workspace member, he is owner of workspace. WorkspaceMemberId="
+              + workspaceMemberId);
+    }
 
     workspaceMemberRepository.delete(member);
 
@@ -94,11 +104,11 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
   }
 
   private void userAndWorkspaceExists(UUID userId, UUID workspaceId) {
-    if (!userRepository.existsById(userId)) { // нет такого User
+    if (!userRepository.existsById(userId)) {
       log.error("user not found, userId={}", userId);
       throw new NotFoundException("User with id " + userId + " not found");
     }
-    if (!workspaceRepository.existsById(workspaceId)) { // нет такого Workspace
+    if (!workspaceRepository.existsById(workspaceId)) {
       log.error("workspace not found, workspaceId={}", workspaceId);
       throw new NotFoundException("Workspace with id " + workspaceId + " not found");
     }
