@@ -1,11 +1,11 @@
 package org.example.taskmanager.taskmanager.infrastructure.event;
 
 import jakarta.persistence.OptimisticLockException;
+import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
 import org.example.taskmanager.taskmanager.domain.event.WorkspaceArchivedEvent;
 import org.example.taskmanager.taskmanager.domain.event.WorkspaceUnarchivedEvent;
-import org.example.taskmanager.taskmanager.infrastructure.logs.CustomLogger;
 import org.example.taskmanager.taskmanager.service.interfaces.ProjectService;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.PessimisticLockingFailureException;
@@ -18,6 +18,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.UUID;
 
+@Slf4j
 @Component
 public class WorkspaceEventListener {
   private final ProjectService projectService;
@@ -45,12 +46,12 @@ public class WorkspaceEventListener {
   )
   public void handle(WorkspaceArchivedEvent event) {
     UUID id = event.workspaceId();
-    CustomLogger.cascadeOperationStarts("archive", "projects", "workspace", id);
+    log.info("cascade project archiveByWorkspace operation starts, workspaceId={}", id);
     try {
-      projectService.archiveByWorkspace(event.workspaceId(), ArchiveReason.PARENT_ARCHIVED);
-      CustomLogger.cascadeOperationComplete("archive", "projects", "workspace", id);
+      projectService.archiveByWorkspace(id, ArchiveReason.PARENT_ARCHIVED);
+      log.debug("cascade project archiveByWorkspace operation completed, workspaceId={}", id);
     } catch (Exception ex) {
-      CustomLogger.cascadeOperationFailed("archive", "projects", "workspace", id);
+      log.error("cascade project archiveByWorkspace operation failed, workspaceId={}", id);
       throw ex;
     }
   }
@@ -74,12 +75,12 @@ public class WorkspaceEventListener {
   )
   public void handle(WorkspaceUnarchivedEvent event) {
     UUID id = event.workspaceId();
-    CustomLogger.cascadeOperationStarts("unarchive", "projects", "workspace", id);
+    log.info("cascade project unarchiveByWorkspace operation starts, workspaceId={}", id);
     try {
-      projectService.unarchiveByWorkspace(event.workspaceId(), UnarchiveReason.CASCADE);
-      CustomLogger.cascadeOperationComplete("unarchive", "projects", "workspace", id);
+      projectService.unarchiveByWorkspace(id, UnarchiveReason.CASCADE);
+      log.debug("cascade project unarchiveByWorkspace operation completed, workspaceId={}", id);
     } catch (Exception ex) {
-      CustomLogger.cascadeOperationFailed("unarchive", "projects", "workspace", id);
+      log.error("cascade project unarchiveByWorkspace operation failed, workspaceId={}", id);
       throw ex;
     }
   }

@@ -35,9 +35,11 @@
 Инварианты:
 - Workspace имеет OWNER
 - WorkspaceMember уникален по userId
-- OWNER не может быть удалён без передачи роли
+- OWNER не может быть удалён/архивирован без передачи роли
 - WorkspaceMember создаётся только для существующего User
-**_`- WorkspaceMember удаляется при деактивации User`_**
+- WorkspaceMember архивируется при деактивации User
+- Workspace не может быть изменен, если он архивирован
+- WorkspaceMember может быть заблокирован ADMIN/OWNER-ом
 
 ### ProjectAggregate
 Корень: Project  
@@ -46,24 +48,30 @@
 - Project принадлежит Workspace
 - Project не может быть создан без существующего Workspace
 - Project может быть в статусе ACTIVE/ARCHIVED
+- Project архивируется каскадно при архивации Workspace
+- Project не может быть изменен, если он архивирован
 
 ### BoardAggregate
 Корень: Board  
 Внутренние сущности: BoardColumn  
 Инварианты:
+- Board принадлежит Project
 - Колонки имеют уникальный порядок (sequence)
 - Колонка не может быть удалена, если в ней есть задачи
-- Board принадлежит Project
+- Board архивируется каскадно при архивации Project/Workspace
+- Board не может быть изменен, если он архивирован
 
 ### TaskAggregate
 Корень: Task  
 Внутренние сущности: Comment, Tag, AuditEntry  
 Инварианты:
+- Task принадлежит Board → Project → Workspace
 - Статус валиден согласно workflow
 - Исполнитель должен быть членом Workspace
-- Task принадлежит Board → Project → Workspace
 - AuditEntry создаётся при каждом изменении значимых полей
 - Tag уникален в пределах Task
+- Task архивируется каскадно при архивации Board/Project/Workspace
+- Task не может быть изменен, если он архивирован
 
 ---
 

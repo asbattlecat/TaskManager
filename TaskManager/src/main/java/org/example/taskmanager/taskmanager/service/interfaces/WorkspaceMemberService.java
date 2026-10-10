@@ -9,6 +9,10 @@ import java.util.UUID;
 public interface WorkspaceMemberService {
   WorkspaceMemberDto create(UUID workspaceId, UUID userId, WorkspaceRole role);
   WorkspaceMemberDto setRoleToMember(UUID workspaceMemberId, WorkspaceRole role);
-  List<WorkspaceMemberDto> getMembers(UUID workspaceId);
+  List<WorkspaceMemberDto> getMembersOfWorkspace(UUID workspaceId);
   WorkspaceMemberDto delete(UUID workspaceMemberId);
+  List<WorkspaceMemberDto> archiveByUser(UUID userId);
+  List<WorkspaceMemberDto> unarchiveByUser(UUID userId);
+  WorkspaceMemberDto blockByManager(UUID workspaceMemberId);
+  WorkspaceMemberDto unblockByManager(UUID workspaceMemberId);
 }

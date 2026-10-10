@@ -8,14 +8,19 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
+import org.example.taskmanager.taskmanager.domain.event.UserActivatedEvent;
+import org.example.taskmanager.taskmanager.domain.event.UserDeactivatedEvent;
 
 import java.util.UUID;
 
+@Slf4j
 @Getter
 @Setter
 @NoArgsConstructor
 @Entity
-public class User {
+public class User extends AggregateRoot {
   @Id
   private UUID id;
 
@@ -42,10 +47,24 @@ public class User {
   }
 
   public void deactivate() {
+    if (!active) {
+      log.debug("cannot deactivate user with id={}, already deactivated", id);
+      throw new IllegalStateException("Cannot deactivate user with id=" + id + ", already deactivated");
+    }
     this.active = false;
+    log.debug("user with id={} deactivated", id);
+
+    registerEvent(new UserDeactivatedEvent(id));
   }
 
   public void activate() {
+    if (active) {
+      log.debug("cannot activate user with id={}, already active", id);
+      throw new IllegalStateException("Cannot activate user with id=" + id + ", already active");
+    }
     this.active = true;
+    log.debug("user with id={} activated", id);
+
+    registerEvent(new UserActivatedEvent(id));
   }
 }

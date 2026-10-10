@@ -1,11 +1,11 @@
 package org.example.taskmanager.taskmanager.infrastructure.event;
 
 import jakarta.persistence.OptimisticLockException;
+import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
 import org.example.taskmanager.taskmanager.domain.event.BoardArchivedEvent;
 import org.example.taskmanager.taskmanager.domain.event.BoardUnarchivedEvent;
-import org.example.taskmanager.taskmanager.infrastructure.logs.CustomLogger;
 import org.example.taskmanager.taskmanager.service.interfaces.TaskService;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.PessimisticLockingFailureException;
@@ -18,6 +18,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.UUID;
 
+@Slf4j
 @Component
 public class BoardEventListener {
   private final TaskService taskService;
@@ -45,12 +46,12 @@ public class BoardEventListener {
   )
   public void handle(BoardArchivedEvent event) {
     UUID id = event.boardId();
-    CustomLogger.cascadeOperationStarts("archive", "tasks", "board", id);
+    log.info("cascade task archiveByBoard operation starts, boardId={}", id);
     try {
       taskService.archiveByBoard(event.boardId(), ArchiveReason.PARENT_ARCHIVED);
-      CustomLogger.cascadeOperationComplete("archive", "tasks", "board", id);
+      log.debug("cascade task archiveByBoard operation completed, boardId={}", id);
     } catch (Exception ex) {
-      CustomLogger.cascadeOperationFailed("archive", "tasks", "board", id);
+      log.error("cascade task archiveByBoard operation failed, boardId={}", id);
       throw ex;
     }
   }
@@ -74,12 +75,12 @@ public class BoardEventListener {
   )
   public void handle(BoardUnarchivedEvent event) {
     UUID id = event.boardId();
-    CustomLogger.cascadeOperationStarts("unarchive", "tasks", "board", id);
+    log.info("cascade task unarchiveByBoard operation starts, boardId={}", id);
     try {
       taskService.unarchiveByBoard(event.boardId(), UnarchiveReason.CASCADE);
-      CustomLogger.cascadeOperationComplete("unarchive", "tasks", "board", id);
+      log.debug("cascade task unarchiveByBoard operation completed, boardId={}", id);
     } catch (Exception ex) {
-      CustomLogger.cascadeOperationFailed("unarchive", "tasks", "board", id);
+      log.error("cascade task unarchiveByBoard operation failed, boardId={}", id);
       throw ex;
     }
   }

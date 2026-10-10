@@ -2,11 +2,9 @@ package org.example.taskmanager.taskmanager.infrastructure.event;
 
 import jakarta.persistence.OptimisticLockException;
 import lombok.extern.slf4j.Slf4j;
-import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
-import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
-import org.example.taskmanager.taskmanager.domain.event.ProjectArchivedEvent;
-import org.example.taskmanager.taskmanager.domain.event.ProjectUnarchivedEvent;
-import org.example.taskmanager.taskmanager.service.interfaces.BoardService;
+import org.example.taskmanager.taskmanager.domain.event.UserActivatedEvent;
+import org.example.taskmanager.taskmanager.domain.event.UserDeactivatedEvent;
+import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceMemberService;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.dao.TransientDataAccessException;
@@ -20,11 +18,11 @@ import java.util.UUID;
 
 @Slf4j
 @Component
-public class ProjectEventListener {
-  private final BoardService boardService;
+public class UserEventListener {
+  private final WorkspaceMemberService workspaceMemberService;
 
-  public ProjectEventListener(BoardService boardService) {
-    this.boardService = boardService;
+  public UserEventListener(WorkspaceMemberService workspaceMemberService) {
+    this.workspaceMemberService = workspaceMemberService;
   }
 
   @Retryable(
@@ -44,14 +42,14 @@ public class ProjectEventListener {
   @TransactionalEventListener(
           phase = TransactionPhase.AFTER_COMMIT
   )
-  public void handle(ProjectArchivedEvent event) {
-    UUID id = event.projectId();
-    log.info("cascade board archiveByProject operation starts, projectId={}", id);
+  public void handle(UserDeactivatedEvent event) {
+    UUID id = event.userId();
+    log.info("cascade workspace member archiveByUser operation starts, userId={}", id);
     try {
-      boardService.archiveByProject(event.projectId(), ArchiveReason.PARENT_ARCHIVED);
-      log.debug("cascade board archiveByProject operation completed, projectId={}", id);
+      workspaceMemberService.archiveByUser(id);
+      log.debug("cascade workspace member archiveByUser operation completed, userId={}", id);
     } catch (Exception ex) {
-      log.error("cascade board archiveByProject operation failed, projectId={}", id);
+      log.error("cascade workspace member archiveByUser operation failed, userId={}", id);
       throw ex;
     }
   }
@@ -73,14 +71,14 @@ public class ProjectEventListener {
   @TransactionalEventListener(
           phase = TransactionPhase.AFTER_COMMIT
   )
-  public void handle(ProjectUnarchivedEvent event) {
-    UUID id = event.projectId();
-    log.info("cascade board unarchiveByProject operation starts, projectId={}", id);
+  public void handle(UserActivatedEvent event) {
+    UUID id = event.userId();
+    log.info("cascade workspace member unarchiveByUser operation starts, userId={}", id);
     try {
-      boardService.unarchiveByProject(event.projectId(), UnarchiveReason.CASCADE);
-      log.debug("cascade board unarchiveByProject operation completed, projectId={}", id);
+      workspaceMemberService.unarchiveByUser(id);
+      log.debug("cascade workspace member unarchiveByUser operation completed, userId={}", id);
     } catch (Exception ex) {
-      log.error("cascade board unarchiveByProject operation failed, projectId={}", id);
+      log.error("cascade workspace member unarchiveByUser operation failed, userId={}", id);
       throw ex;
     }
   }
