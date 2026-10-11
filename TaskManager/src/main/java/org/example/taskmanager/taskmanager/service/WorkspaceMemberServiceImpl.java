@@ -8,7 +8,6 @@ import org.example.taskmanager.taskmanager.domain.enums.WorkspaceRole;
 import org.example.taskmanager.taskmanager.infrastructure.exception.AlreadyExistsException;
 import org.example.taskmanager.taskmanager.infrastructure.exception.EntityInUseException;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
-import org.example.taskmanager.taskmanager.infrastructure.logs.CustomLogger;
 import org.example.taskmanager.taskmanager.mapper.WorkspaceMemberMapper;
 import org.example.taskmanager.taskmanager.repository.UserRepository;
 import org.example.taskmanager.taskmanager.repository.WorkspaceMemberRepository;
@@ -133,7 +132,6 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
       member.unarchive();
       workspaceMemberRepository.save(member);
       log.debug("workspace member with id={} unarchived and saved in database", member.getId());
-
     }
 
     log.debug("workspace member unarchiveByUser operation completed, userId={}", userId);
@@ -147,7 +145,6 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
 
     member.block();
     workspaceMemberRepository.save(member);
-    log.debug("workspace member with id={} blocked and saved in database", workspaceMemberId);
 
     log.debug("workspace member blockByManager operation completed, workspaceMemberId={}", workspaceMemberId);
     return workspaceMemberMapper.toDto(member);
@@ -160,7 +157,6 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
 
     member.unblock();
     workspaceMemberRepository.save(member);
-    log.debug("workspace member with id={} unblocked and saved in database", workspaceMemberId);
 
     log.debug("workspace member unblockByManager operation completed, workspaceMemberId={}", workspaceMemberId);
     return workspaceMemberMapper.toDto(member);
@@ -185,7 +181,8 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
   }
 
   private WorkspaceMember getMember(UUID workspaceMemberId) {
-    return workspaceMemberRepository.findById(workspaceMemberId)
+    return workspaceMemberRepository
+            .findById(workspaceMemberId)
             .orElseThrow(() -> {
               log.error("workspace member not found, workspaceMemberId={}", workspaceMemberId);
               return new NotFoundException("Member with id " + workspaceMemberId

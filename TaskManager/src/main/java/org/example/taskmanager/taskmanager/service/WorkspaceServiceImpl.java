@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.controller.dto.response.ProjectDto;
 import org.example.taskmanager.taskmanager.controller.dto.response.WorkspaceDto;
 import org.example.taskmanager.taskmanager.domain.entity.Project;
-import org.example.taskmanager.taskmanager.domain.entity.User;
 import org.example.taskmanager.taskmanager.domain.entity.Workspace;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
@@ -12,7 +11,6 @@ import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceRole;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEventPublisher;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
-import org.example.taskmanager.taskmanager.infrastructure.logs.CustomLogger;
 import org.example.taskmanager.taskmanager.mapper.ProjectMapper;
 import org.example.taskmanager.taskmanager.mapper.WorkspaceMapper;
 import org.example.taskmanager.taskmanager.repository.ProjectRepository;
@@ -61,7 +59,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   public WorkspaceDto create(String name, String description, UUID ownerId) {
     log.info("creating workspace, name={}, description={}, ownerId={}", name, description, ownerId);
 
-    // правило агрегата: workspace имеет OWNER. поэтому создаем owner-а
+    // Правило агрегата: workspace имеет OWNER. Поэтому создаем owner-а
     if (!userRepository.existsById(ownerId)) {
       log.error("user not found, userId={}", ownerId);
       throw new NotFoundException("User with id " + ownerId
@@ -123,20 +121,20 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   @Transactional
   @Override
   public List<ProjectDto> getProjects(UUID workspaceId) {
-    CustomLogger.operationStarts("workspace", "getProjects", "workspaceId", workspaceId);
+    log.info("workspace getProjects operation starts, workspaceId={}", workspaceId);
 
     Workspace workspace = getWorkspace(workspaceId, "getProjects");
     isWorkspaceActive(workspace, "getProjects");
     List<Project> projects = projectRepository.findAllByWorkspaceId(workspaceId);
 
-    CustomLogger.operationCompleted("workspace", "getProjects", "workspaceId", workspaceId);
+    log.debug("workspace getProjects operation completed, workspaceId={}", workspaceId);
     return projects.stream().map(projectMapper::toDto).toList();
   }
 
   @Transactional
   @Override
   public WorkspaceDto changeName(UUID workspaceId, String newName) {
-    CustomLogger.operationStarts("workspace", "changeName", "workspaceId", workspaceId);
+    log.info("workspace changeName operation starts, workspaceId={}, newName={}", workspaceId, newName);
     Workspace workspace = getWorkspace(workspaceId, "changeName");
 
     isWorkspaceActive(workspace, "changeName");
@@ -144,15 +142,15 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     workspace.setName(newName);
     workspaceRepository.save(workspace);
 
-    CustomLogger.operationCompleted("workspace", "changeName", "workspaceId", workspaceId);
-    log.debug("Workspace changeName completed, workspaceId={}", workspaceId);
+    log.debug("workspace changeName operation completed, workspaceId={}, newName={}", workspaceId, newName);
     return workspaceMapper.toDto(workspace);
   }
 
   @Transactional
   @Override
   public WorkspaceDto changeDescription(UUID workspaceId, String newDescription) {
-    CustomLogger.operationStarts("workspace", "changeDescription", "workspaceId", workspaceId);
+    log.info("workspace changeDescription operation starts, workspaceId={}, newDescription={}",
+            workspaceId, newDescription);
     Workspace workspace = getWorkspace(workspaceId, "changeDescription");
 
     isWorkspaceActive(workspace, "changeDescription");
@@ -160,12 +158,14 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     workspace.setDescription(newDescription);
     workspaceRepository.save(workspace);
 
-    CustomLogger.operationCompleted("workspace", "changeDescription", "workspaceId", workspaceId);
+    log.debug("workspace changeDescription operation completed, workspaceId={}, newDescription={}",
+            workspaceId, newDescription);
     return workspaceMapper.toDto(workspace);
   }
 
   private Workspace getWorkspace(UUID workspaceId, String operationName) {
-    return workspaceRepository.findById(workspaceId)
+    return workspaceRepository
+            .findById(workspaceId)
             .orElseThrow(() -> {
               log.error("Workspace not found, id={}, operationName={}", workspaceId, operationName);
               return new NotFoundException("Workspace with id "

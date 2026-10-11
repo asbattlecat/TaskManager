@@ -14,7 +14,6 @@ import org.example.taskmanager.taskmanager.domain.enums.BoardType;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEventPublisher;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
-import org.example.taskmanager.taskmanager.infrastructure.logs.CustomLogger;
 import org.example.taskmanager.taskmanager.mapper.BoardColumnMapper;
 import org.example.taskmanager.taskmanager.mapper.BoardMapper;
 import org.example.taskmanager.taskmanager.mapper.TaskMapper;
@@ -70,12 +69,11 @@ public class BoardServiceImpl implements BoardService {
             projectId, name, description, boardType);
 
     if (!projectRepository.existsById(projectId)) {
-      log.error("board was not created, project not found, projectId={}", projectId);
+      log.error("board not created, project not found, projectId={}", projectId);
       throw new NotFoundException("Project with id " + projectId + " not found during board create operation");
     }
 
     Board board = new Board(projectId, name, description, boardType);
-
     boardRepository.save(board);
 
     log.info("board created and saved in database, boardId={}", board.getId());
@@ -85,7 +83,7 @@ public class BoardServiceImpl implements BoardService {
   @Transactional
   @Override
   public BoardDto archive(UUID boardId, ArchiveReason reason) {
-    log.info("board archive starts, boardId={}, reason={}", boardId, reason);
+    log.info("board archive operation starts, boardId={}, reason={}", boardId, reason);
     Board board = getBoard(boardId, "archive");
 
     board.archive(reason);
@@ -93,35 +91,36 @@ public class BoardServiceImpl implements BoardService {
     board.getEvents().forEach(domainEventPublisher::publish);
     board.clearEvents();
 
-    log.debug("board archive completed, boardId={}, reason={}", boardId, reason);
+    log.debug("board archive operation completed, boardId={}, reason={}", boardId, reason);
     return boardMapper.toDto(board);
   }
 
   @Transactional
   @Override
   public List<BoardDto> archiveByProject(UUID projectId, ArchiveReason reason) {
-    log.info("board archiveByProject starts, projectId={}, reason={}", projectId, reason);
+    log.info("board archiveByProject operation starts, projectId={}, reason={}", projectId, reason);
 
     List<Board> boards = boardRepository
             .findBoardsByProjectIdWithPessimisticWriteLock(projectId);
 
     for (Board board : boards) {
-      if (board.getArchiveState() == ArchiveState.ACTIVE) {
-        board.archive(reason);
-        boardRepository.save(board);
-        board.getEvents().forEach(domainEventPublisher::publish);
-        board.clearEvents();
-      }
+      if (board.getArchiveState() != ArchiveState.ACTIVE) continue;
+
+      board.archive(reason);
+      boardRepository.save(board);
+      board.getEvents().forEach(domainEventPublisher::publish);
+      board.clearEvents();
+      log.debug("board with id={} archived by project and saved in database", board.getId());
     }
 
-    log.debug("board archiveByProject completed, projectId={}, reason={}", projectId, reason);
+    log.debug("board archiveByProject operation completed, projectId={}, reason={}", projectId, reason);
     return boards.stream().map(boardMapper::toDto).toList();
   }
 
   @Transactional
   @Override
   public BoardDto unarchive(UUID boardId, UnarchiveReason reason) {
-    log.info("board unarchive starts, boardId={}, reason={}", boardId, reason);
+    log.info("board unarchive operation starts, boardId={}, reason={}", boardId, reason);
     Board board = getBoard(boardId, "unarchive");
 
     Project parent = getParent(board.getProjectId(), "unarchive");
@@ -132,14 +131,14 @@ public class BoardServiceImpl implements BoardService {
     board.getEvents().forEach(domainEventPublisher::publish);
     board.clearEvents();
 
-    log.debug("board unarchive completed, boardId={}, reason={}", boardId, reason);
+    log.debug("board unarchive operation completed, boardId={}, reason={}", boardId, reason);
     return boardMapper.toDto(board);
   }
 
   @Transactional
   @Override
   public List<BoardDto> unarchiveByProject(UUID projectId, UnarchiveReason reason) {
-    log.info("board unarchiveByProject starts, projectId={}, reason={}", projectId, reason);
+    log.info("board unarchiveByProject operation starts, projectId={}, reason={}", projectId, reason);
     List<Board> boards = boardRepository
             .findBoardsByProjectIdWithPessimisticWriteLock(projectId);
 
@@ -147,38 +146,41 @@ public class BoardServiceImpl implements BoardService {
     checkParentBeforeUnarchive(parent);
 
     for (Board board : boards) {
-      if (board.canBeUnarchived(reason)) {
-        board.unarchive(reason);
-        boardRepository.save(board);
-        board.getEvents().forEach(domainEventPublisher::publish);
-        board.clearEvents();
-      }
+      if (!board.canBeUnarchived(reason)) continue;
+
+      board.unarchive(reason);
+      boardRepository.save(board);
+      board.getEvents().forEach(domainEventPublisher::publish);
+      board.clearEvents();
+
+      log.debug("board with id={} unarchived by project and saved in database", board.getId());
     }
 
-    log.debug("board unarchiveByProject completed, projectId={}, reason={}", projectId, reason);
+    log.debug("board unarchiveByProject operation completed, projectId={}, reason={}", projectId, reason);
     return boards.stream().map(boardMapper::toDto).toList();
   }
 
   @Transactional
   @Override
   public List<TaskDto> getTasks(UUID boardId) {
-    CustomLogger.operationStarts("board", "getTasks", "boardId", boardId);
+    log.info("board getTasks operation starts, boardId={}", boardId);
     Board board = getBoard(boardId, "getTasks");
 
     isBoardActive(board, "getTasks");
 
     List<Task> tasks = taskRepository.findAllByBoardId(boardId);
 
-    CustomLogger.operationCompleted("board", "getTasks", "boardId", boardId);
+    log.debug("board getTasks operation completed, boardId={}", boardId);
     return tasks.stream().map(taskMapper::toDto).toList();
   }
 
   @Transactional
   @Override
   public BoardColumnDto changeColumnName(UUID columnId, String newName) {
-    CustomLogger.operationStarts("board", "changeColumnName", "columnId", columnId);
+    log.info("board changeColumnName operation starts, columnId={}, newName={}", columnId, newName);
 
-    BoardColumn boardColumn =  boardColumnRepository.findById(columnId)
+    BoardColumn boardColumn =  boardColumnRepository
+            .findById(columnId)
             .orElseThrow(() -> {
               log.error("board column not found, columnId={}", columnId);
               return new NotFoundException("Column with id "
@@ -189,7 +191,7 @@ public class BoardServiceImpl implements BoardService {
 
     boardColumnRepository.save(boardColumn);
 
-    CustomLogger.operationCompleted("board", "changeColumnName", "columnId", columnId);
+    log.debug("board changeColumnName operation completed, columnId={}, newName={}", columnId, newName);
     return boardColumnMapper.toDto(boardColumn);
   }
 
@@ -208,7 +210,8 @@ public class BoardServiceImpl implements BoardService {
   @Transactional
   @Override
   public List<BoardColumnDto> changeColumnPosition(UUID boardId, Integer oldPosition, Integer newPosition) {
-    CustomLogger.operationStarts("board", "changeColumnPosition", "boardId", boardId);
+    log.info("board changeColumnPosition operation starts, boardId={}, oldPosition={}, newPosition={}",
+            boardId, oldPosition, newPosition);
     List<BoardColumn> columns = boardColumnRepository.findAllByBoardIdOrderByPositionAsc(boardId);
 
     if (columns.isEmpty()) {
@@ -219,10 +222,10 @@ public class BoardServiceImpl implements BoardService {
 
     int listSize = columns.size();
     if (oldPosition >= listSize) {
-      log.error("Old position out of range, oldPosition={}, listSize={}", oldPosition, listSize);
+      log.error("old position out of range, oldPosition={}, listSize={}", oldPosition, listSize);
       throw new ArrayIndexOutOfBoundsException("Old position out of range");
     } else if (newPosition >= listSize) {
-      log.error("New position out of range, newPosition={}, listSize={}", newPosition, listSize);
+      log.error("new position out of range, newPosition={}, listSize={}", newPosition, listSize);
       throw new ArrayIndexOutOfBoundsException("New position out of range");
     }
 
@@ -255,12 +258,14 @@ public class BoardServiceImpl implements BoardService {
       }
     }
 
-    CustomLogger.operationCompleted("board", "changeColumnPosition", "boardId", boardId);
+    log.debug("board changeColumnPosition operation completed, boardId={}, oldPosition={}, newPosition={}",
+            boardId, oldPosition, newPosition);
     return columns.stream().map(boardColumnMapper::toDto).toList();
   }
 
   private Board getBoard(UUID boardId, String operationName) {
-    return boardRepository.findById(boardId)
+    return boardRepository
+            .findById(boardId)
             .orElseThrow(() -> {
               log.error("board not found, boardId={}, operationName={}", boardId, operationName);
               return new NotFoundException("Board with id " + boardId + " not found during "
@@ -269,7 +274,8 @@ public class BoardServiceImpl implements BoardService {
   }
 
   private Project getParent(UUID projectId, String operationName) {
-    return projectRepository.findById(projectId)
+    return projectRepository
+            .findById(projectId)
             .orElseThrow(() -> {
               log.error("project not found, projectId={}, operationName={}", projectId, operationName);
               return new NotFoundException("Project with id " + projectId

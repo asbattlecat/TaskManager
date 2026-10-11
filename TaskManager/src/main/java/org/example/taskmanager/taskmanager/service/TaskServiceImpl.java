@@ -9,7 +9,6 @@ import org.example.taskmanager.taskmanager.domain.entity.*;
 import org.example.taskmanager.taskmanager.domain.enums.*;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEventPublisher;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
-import org.example.taskmanager.taskmanager.infrastructure.logs.CustomLogger;
 import org.example.taskmanager.taskmanager.infrastructure.specification.TaskSpecification;
 import org.example.taskmanager.taskmanager.mapper.CommentMapper;
 import org.example.taskmanager.taskmanager.mapper.TagMapper;
@@ -94,7 +93,7 @@ public class TaskServiceImpl implements TaskService {
   @Transactional
   @Override
   public TaskDto archive(UUID taskId, ArchiveReason reason) {
-    log.info("task archive starts, taskId={}, reason={}", taskId, reason);
+    log.info("task archive operation starts, taskId={}, reason={}", taskId, reason);
 
     Task task = getTask(taskId, "archive");
     ArchiveState oldValue = task.getArchiveState();
@@ -113,7 +112,7 @@ public class TaskServiceImpl implements TaskService {
     task.getEvents().forEach(domainEventPublisher::publish);
     task.clearEvents();
 
-    log.debug("task archive completed, taskId={}, reason={}", taskId, reason);
+    log.debug("task archive operation completed, taskId={}, reason={}", taskId, reason);
     return taskMapper.toDto(task);
   }
 
@@ -126,23 +125,24 @@ public class TaskServiceImpl implements TaskService {
             .findTasksByBoardIdWithPessimisticWriteLock(boardId);
 
     for (Task task : tasks) {
-      if (task.getArchiveState() == ArchiveState.ACTIVE) {
-        ArchiveState oldValue = task.getArchiveState();
+      if (task.getArchiveState() != ArchiveState.ACTIVE) continue;
 
-        task.archive(reason);
-        taskRepository.save(task);
+      ArchiveState oldValue = task.getArchiveState();
+      task.archive(reason);
+      taskRepository.save(task);
 
-        auditEntityService.create(
-                task.getId(),
-                null,
-                "archiveState",
-                oldValue.toString(),
-                task.getArchiveState().toString()
-        );
+      auditEntityService.create(
+              task.getId(),
+              null,
+              "archiveState",
+              oldValue.toString(),
+              task.getArchiveState().toString()
+      );
 
-        task.getEvents().forEach(domainEventPublisher::publish);
-        task.clearEvents();
-      }
+      task.getEvents().forEach(domainEventPublisher::publish);
+      task.clearEvents();
+
+      log.debug("task with id={} archived by project and saved in database", task.getId());
     }
 
     log.debug("task archiveByBoard complete, boardId={}, reason={}", boardId, reason);
@@ -191,23 +191,25 @@ public class TaskServiceImpl implements TaskService {
     checkParentBeforeUnarchive(parent);
 
     for (Task task : tasks) {
-      if (task.canBeUnarchived(reason)) {
-        ArchiveState oldValue = task.getArchiveState();
+      if (!task.canBeUnarchived(reason)) continue;
 
-        task.unarchive(reason);
-        taskRepository.save(task);
+      ArchiveState oldValue = task.getArchiveState();
 
-        auditEntityService.create(
-                task.getId(),
-                null,
-                "archiveState",
-                oldValue.toString(),
-                task.getArchiveState().toString()
-        );
+      task.unarchive(reason);
+      taskRepository.save(task);
 
-        task.getEvents().forEach(domainEventPublisher::publish);
-        task.clearEvents();
-      }
+      auditEntityService.create(
+              task.getId(),
+              null,
+              "archiveState",
+              oldValue.toString(),
+              task.getArchiveState().toString()
+      );
+
+      task.getEvents().forEach(domainEventPublisher::publish);
+      task.clearEvents();
+
+      log.debug("task with id={} unarchived by board and saved in database", task.getId());
     }
 
     log.debug("task unarchiveByBoard completed, boardId={}, reason={}", boardId, reason);
@@ -217,7 +219,7 @@ public class TaskServiceImpl implements TaskService {
   @Transactional
   @Override
   public TaskDto changeName(UUID taskId, String newName, UUID userId) {
-    CustomLogger.operationStarts("task", "changeName", "taskId", taskId);
+    log.info("task changeName operation starts, taskId={}, newName={}, userId={}", taskId, newName, userId);
     Task task = getTask(taskId, "changeName");
 
     isTaskActive(task, "changeName");
@@ -235,14 +237,15 @@ public class TaskServiceImpl implements TaskService {
       taskRepository.save(task);
     }
 
-    CustomLogger.operationCompleted("task", "changeName", "taskId", taskId);
+    log.debug("task changeName operation completed, taskId={}, newName={}, userId={}", taskId, newName, userId);
     return taskMapper.toDto(task);
   }
 
   @Transactional
   @Override
   public TaskDto changeDescription(UUID taskId, String newDescription, UUID userId) {
-    CustomLogger.operationStarts("task", "changeDescription", "taskId", taskId);
+    log.info("task changeDescription operation starts, taskId={}, newDescription={}, userId={}",
+            taskId, newDescription, userId);
     Task task = getTask(taskId, "changeDescription");
 
     isTaskActive(task, "changeDescription");
@@ -260,14 +263,16 @@ public class TaskServiceImpl implements TaskService {
       taskRepository.save(task);
     }
 
-    CustomLogger.operationCompleted("task", "changeName", "taskId", taskId);
+    log.debug("task changeDescription operation completed, taskId={}, newDescription={}, userId={}",
+            taskId, newDescription, userId);
     return taskMapper.toDto(task);
   }
 
   @Transactional
   @Override
   public TaskDto changePriority(UUID taskId, TaskPriority newPriority, UUID userId) {
-    CustomLogger.operationStarts("task", "changePriority", "taskId", taskId);
+    log.info("task changePriority operation starts, taskId={}, newPriority={}, userId={}",
+            taskId, newPriority, userId);
     Task task = getTask(taskId, "changePriority");
 
     isTaskActive(task, "changePriority");
@@ -285,14 +290,15 @@ public class TaskServiceImpl implements TaskService {
       taskRepository.save(task);
     }
 
-    CustomLogger.operationCompleted("task", "changePriority", "taskId", taskId);
+    log.debug("task changePriority operation completed, taskId={}, newPriority={}, userId={}",
+            taskId, newPriority, userId);
     return taskMapper.toDto(task);
   }
 
   @Transactional
   @Override
   public TaskDto changeColumn(UUID taskId, UUID newColumnId) {
-    CustomLogger.operationStarts("task", "changeColumn", "taskId", taskId);
+    log.info("task changeColumn operation starts, taskId={}, newColumnId={}", taskId, newColumnId);
     Task task = getTask(taskId, "changeColumn");
 
     isTaskActive(task, "changeColumn");
@@ -305,14 +311,15 @@ public class TaskServiceImpl implements TaskService {
       taskRepository.save(task);
     }
 
-    CustomLogger.operationCompleted("task", "changeColumn", "taskId", taskId);
+    log.debug("task changeColumn operation completed, taskId={}, newColumnId={}", taskId, newColumnId);
     return taskMapper.toDto(task);
   }
 
   @Transactional
   @Override
   public TaskDto changeDeadline(UUID taskId, Instant newDeadline, UUID userId) {
-    CustomLogger.operationStarts("task", "changeDeadline", "taskId", taskId);
+    log.info("task changeDeadline operation starts, taskId={}, newDeadline={}, userId={}",
+            taskId, newDeadline, userId);
     Task task = getTask(taskId, "changeDeadline");
 
     isTaskActive(task, "changeDeadline");
@@ -330,14 +337,16 @@ public class TaskServiceImpl implements TaskService {
       taskRepository.save(task);
     }
 
-    CustomLogger.operationCompleted("task", "changeDeadline", "taskId", taskId);
+    log.debug("task changeDeadline operation completed, taskId={}, newDeadline={}, userId={}",
+            taskId, newDeadline, userId);
     return taskMapper.toDto(task);
   }
 
   @Transactional
   @Override
   public TaskDto changeStatus(UUID taskId, TaskStatus newStatus, UUID userId) {
-    CustomLogger.operationStarts("task", "changeStatus", "taskId", taskId);
+    log.info("task changeStatus operation starts, taskId={}, newStatus={}, userId={}",
+            taskId, newStatus, userId);
     Task task = getTask(taskId, "changeStatus");
 
     isTaskActive(task, "changeStatus");
@@ -355,14 +364,16 @@ public class TaskServiceImpl implements TaskService {
       taskRepository.save(task);
     }
 
-    CustomLogger.operationCompleted("task", "changeStatus", "taskId", taskId);
+    log.debug("task changeStatus operation completed, taskId={}, newStatus={}, userId={}",
+            taskId, newStatus, userId);
     return taskMapper.toDto(task);
   }
 
   @Transactional
   @Override
   public TaskDto setAssignee(UUID taskId, UUID workspaceMemberId, UUID userId) {
-    CustomLogger.operationStarts("task", "setAssignee", "taskId", taskId);
+    log.info("task setAssignee operation starts, taskId={}, workspaceMemberId={}, userId={}",
+            taskId, workspaceMemberId, userId);
     Task task = getTask(taskId, "setAssignee");
 
     isTaskActive(task, "setAssignee");
@@ -382,14 +393,16 @@ public class TaskServiceImpl implements TaskService {
       taskRepository.save(task);
     }
 
-    CustomLogger.operationCompleted("task", "setAssignee", "taskId", taskId);
+    log.debug("task setAssignee operation completed, taskId={}, workspaceMemberId={}, userId={}",
+            taskId, workspaceMemberId, userId);
     return taskMapper.toDto(task);
   }
 
   @Transactional
   @Override
   public CommentDto addComment(UUID taskId, UUID workspaceMemberId, String content) {
-    CustomLogger.operationStarts("task", "addComment", "taskId", taskId);
+    log.info("task addComment operation starts, taskId={}, workspaceMemberId={}, content={}",
+            taskId, workspaceMemberId, content);
     Task task = getTask(taskId, "addComment");
 
     workspaceAccessChecker.check(task, workspaceMemberId);
@@ -397,20 +410,23 @@ public class TaskServiceImpl implements TaskService {
     Comment comment = new Comment(taskId, workspaceMemberId, content);
     commentRepository.save(comment);
 
-    CustomLogger.operationCompleted("task", "addComment", "taskId", taskId);
+    log.debug("task addComment operation completed, taskId={}, workspaceMemberId={}, content={}",
+            taskId, workspaceMemberId, content);
     return commentMapper.toDto(comment);
   }
 
   @Transactional
   @Override
   public TagDto addTag(UUID taskId, String name, TagColor color) {
-    CustomLogger.operationStarts("task", "addTag", "taskId", taskId);
+    log.info("task addTag operation starts, taskId={}, name={}, color={}",
+            taskId, name, color);
     getTask(taskId, "addTag");
 
     Tag tag = new Tag(taskId, name, color);
     tagRepository.save(tag);
 
-    CustomLogger.operationCompleted("task", "addTag", "taskId", taskId);
+    log.debug("task addTag operation completed, taskId={}, name={}, color={}",
+            taskId, name, color);
     return tagMapper.toDto(tag);
   }
 
@@ -437,12 +453,13 @@ public class TaskServiceImpl implements TaskService {
   @Transactional
   @Override
   public List<AuditEntityDto> getTaskChangesHistory(UUID taskId) {
-    CustomLogger.operationStarts("task", "getTaskChangesHistory", "taskId", taskId);
+    log.info("task getTaskChangesHistory operation starts, taskId={}", taskId);
     return auditEntityService.getTaskChangesHistory(taskId);
   }
 
   private Task getTask(UUID taskId, String operationName) {
-    return taskRepository.findById(taskId)
+    return taskRepository
+            .findById(taskId)
             .orElseThrow(() -> {
               log.error("task not found during {}, taskId={}", operationName, taskId);
               return new NotFoundException("Task with id " + taskId
@@ -451,7 +468,8 @@ public class TaskServiceImpl implements TaskService {
   }
 
   private Board getParent(UUID boardId, String operationName) {
-    return boardRepository.findById(boardId)
+    return boardRepository
+            .findById(boardId)
             .orElseThrow(() -> {
               log.error("board not found during {}, boardId={}", operationName, boardId);
               return new NotFoundException("Board with id " + boardId

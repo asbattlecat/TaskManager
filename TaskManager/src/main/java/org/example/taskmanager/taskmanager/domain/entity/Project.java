@@ -73,6 +73,7 @@ public class Project extends AggregateRoot {
       archiveState = ArchiveState.PARENT_ARCHIVED;
     }
 
+    log.info("project archived, id={}", id);
     registerEvent(new ProjectArchivedEvent(id));
   }
 
@@ -86,6 +87,7 @@ public class Project extends AggregateRoot {
 
     archiveState = ArchiveState.ACTIVE;
 
+    log.info("project unarchived, id={}", id);
     registerEvent(new ProjectUnarchivedEvent(id));
   }
 

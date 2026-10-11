@@ -91,12 +91,14 @@ public class ProjectServiceImpl implements ProjectService {
             .findProjectsByWorkspaceIdWithPessimisticWriteLock(workspaceId);
 
     for (Project project : projects) {
-      if (project.getArchiveState() == ArchiveState.ACTIVE) {
-        project.archive(reason);
-        projectRepository.save(project);
-        project.getEvents().forEach(domainEventPublisher::publish);;
-        project.clearEvents();
-      }
+      if (project.getArchiveState() != ArchiveState.ACTIVE) continue;
+
+      project.archive(reason);
+      projectRepository.save(project);
+      project.getEvents().forEach(domainEventPublisher::publish);;
+      project.clearEvents();
+
+      log.debug("project with id={} archived by workspace and saved in database", project.getId());
     }
 
     log.debug("project archiveByWorkspace completed, workspaceId={}, reason={}", workspaceId, reason);
@@ -134,12 +136,14 @@ public class ProjectServiceImpl implements ProjectService {
     checkParentBeforeUnarchive(parent);
 
     for (Project project : projects) {
-      if (project.canBeUnarchived(reason)) {
-        project.unarchive(reason);
-        projectRepository.save(project);
-        project.getEvents().forEach(domainEventPublisher::publish);
-        project.clearEvents();
-      }
+      if (!project.canBeUnarchived(reason)) continue;
+
+      project.unarchive(reason);
+      projectRepository.save(project);
+      project.getEvents().forEach(domainEventPublisher::publish);
+      project.clearEvents();
+
+      log.debug("project with id={} unarchived by workspace and saved in database", project.getId());
     }
 
     log.info("project unarchiveByWorkspace completed, workspaceId={}, reason={}", workspaceId, reason);
@@ -149,21 +153,21 @@ public class ProjectServiceImpl implements ProjectService {
   @Transactional
   @Override
   public List<BoardDto> getProjectBoards(UUID projectId) {
-    CustomLogger.operationStarts("project", "getProjectBoards", "projectId", projectId);
+    log.info("project getProjectBoards operation starts, projectId={}", projectId);
     Project project = getProject(projectId, "getProjectBoards");
 
     isProjectActive(project, "getProjectBoards");
 
     List<Board> boards = boardRepository.findAllByProjectId(projectId);
 
-    CustomLogger.operationCompleted("project", "getProjectBoards", "projectId", projectId);
+    log.debug("board getProjectBoards operation completed, projectId={}", projectId);
     return boards.stream().map(boardMapper::toDto).toList();
   }
 
   @Transactional
   @Override
   public ProjectDto changeName(UUID projectId, String newName) {
-    CustomLogger.operationStarts("project", "changeName", "projectId", projectId);
+    log.info("project changeName operation starts, projectId={}, newName={}", projectId, newName);
     Project project = getProject(projectId, "changeName");
 
     isProjectActive(project, "changeName");
@@ -171,14 +175,14 @@ public class ProjectServiceImpl implements ProjectService {
     project.setName(newName);
     projectRepository.save(project);
 
-    CustomLogger.operationCompleted("project", "changeName", "projectId", projectId);
+    log.debug("project changeName operation completed, projectId={}, newName={}", projectId, newName);
     return projectMapper.toDto(project);
   }
 
   @Transactional
   @Override
   public ProjectDto changeDescription(UUID projectId, String newDescription) {
-    CustomLogger.operationStarts("project", "changeDescription", "projectId", projectId);
+    log.info("project changeDescription operation starts, projectId={}, newDescription={}", projectId, newDescription);
     Project project = getProject(projectId, "changeDescription");
 
     isProjectActive(project, "changeDescription");
@@ -186,12 +190,13 @@ public class ProjectServiceImpl implements ProjectService {
     project.setDescription(newDescription);
     projectRepository.save(project);
 
-    CustomLogger.operationCompleted("project", "changeDescription", "projectId", projectId);
+    log.info("project changeDescription operation completed, projectId={}, newDescription={}", projectId, newDescription);
     return projectMapper.toDto(project);
   }
 
   private Project getProject(UUID projectId, String operationName) {
-    return projectRepository.findById(projectId)
+    return projectRepository
+            .findById(projectId)
             .orElseThrow(() -> {
               log.error("project not found during {}, projectId={}", operationName, projectId);
               return new NotFoundException("Project with id " + projectId
@@ -200,7 +205,8 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   private Workspace getParent(UUID workspaceId,String operationName) {
-    return workspaceRepository.findById(workspaceId)
+    return workspaceRepository
+            .findById(workspaceId)
             .orElseThrow(() -> {
               log.error("workspace not found during {}, workspaceId={}", operationName, workspaceId);
               return new NotFoundException("Workspace as parent of project with id "

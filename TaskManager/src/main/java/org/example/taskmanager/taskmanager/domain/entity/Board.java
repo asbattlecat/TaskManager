@@ -78,6 +78,7 @@ public class Board extends AggregateRoot {
       archiveState = ArchiveState.PARENT_ARCHIVED;
     }
 
+    log.debug("board archived, id={}", id);
     registerEvent(new BoardArchivedEvent(id));
   }
 
@@ -91,6 +92,7 @@ public class Board extends AggregateRoot {
 
     archiveState = ArchiveState.ACTIVE;
 
+    log.debug("board unarchived, id={}", id);
     registerEvent(new BoardUnarchivedEvent(id));
   }
 

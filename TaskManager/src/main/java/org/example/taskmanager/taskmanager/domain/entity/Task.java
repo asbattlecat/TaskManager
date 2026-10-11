@@ -98,6 +98,7 @@ public class Task extends AggregateRoot {
       archiveState = ArchiveState.PARENT_ARCHIVED;
     }
 
+    log.info("task archived, id={}", id);
     registerEvent(new TaskArchivedEvent(id));
   }
 
@@ -111,6 +112,7 @@ public class Task extends AggregateRoot {
 
     archiveState = ArchiveState.ACTIVE;
 
+    log.info("task unarchived, id={}", id);
     registerEvent(new TaskUnarchivedEvent(id));
   }
 
