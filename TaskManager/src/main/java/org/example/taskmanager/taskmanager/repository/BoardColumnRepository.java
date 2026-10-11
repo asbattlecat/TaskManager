@@ -7,12 +7,11 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public interface BoardColumnRepository extends JpaRepository<BoardColumn, UUID> {
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT c FROM BoardColumn c WHERE c.boardId = :boardId ORDER BY c.position ASC")
-  List<BoardColumn> findAllByBoardIdOrderByPositionAsc(@Param("boardId") UUID boardId);
+  List<BoardColumn> findAllByBoardIdOrderByPositionAscPessLock(@Param("boardId") UUID boardId);
 }

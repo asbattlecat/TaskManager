@@ -35,6 +35,7 @@
 Инварианты:
 - Workspace имеет OWNER
 - WorkspaceMember уникален по userId
+- Workspace может быть в статусе ACTIVE/USER_ARCHIVED
 - OWNER не может быть удалён/архивирован без передачи роли
 - WorkspaceMember создаётся только для существующего User
 - WorkspaceMember архивируется при деактивации User
@@ -47,7 +48,7 @@
 Инварианты:
 - Project принадлежит Workspace
 - Project не может быть создан без существующего Workspace
-- Project может быть в статусе ACTIVE/ARCHIVED
+- Project может быть в статусе ACTIVE/USER_ARCHIVED/PARENT_ARCHIVED
 - Project архивируется каскадно при архивации Workspace
 - Project не может быть изменен, если он архивирован
 
@@ -69,7 +70,6 @@
 - Статус валиден согласно workflow
 - Исполнитель должен быть членом Workspace
 - AuditEntry создаётся при каждом изменении значимых полей
-- Tag уникален в пределах Task
 - Task архивируется каскадно при архивации Board/Project/Workspace
 - Task не может быть изменен, если он архивирован
 

@@ -11,7 +11,6 @@ import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEventPublisher;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
-import org.example.taskmanager.taskmanager.infrastructure.logs.CustomLogger;
 import org.example.taskmanager.taskmanager.mapper.BoardMapper;
 import org.example.taskmanager.taskmanager.mapper.ProjectMapper;
 import org.example.taskmanager.taskmanager.repository.BoardRepository;
@@ -27,13 +26,12 @@ import java.util.UUID;
 @Slf4j
 @Service
 public class ProjectServiceImpl implements ProjectService {
+  private final DomainEventPublisher domainEventPublisher;
   private final WorkspaceRepository  workspaceRepository;
   private final ProjectRepository projectRepository;
   private final BoardRepository boardRepository;
   private final ProjectMapper projectMapper;
   private final BoardMapper boardMapper;
-
-  private final DomainEventPublisher domainEventPublisher;
 
   public ProjectServiceImpl(
           DomainEventPublisher domainEventPublisher,
@@ -55,6 +53,7 @@ public class ProjectServiceImpl implements ProjectService {
   @Override
   public ProjectDto create(UUID workspaceId, String name, String description) {
     log.info("creating project, workspaceId={}, name={}, description={}", workspaceId, name, description);
+
     if (!workspaceRepository.existsById(workspaceId)) {
       log.error("project was not created, workspace not found, workspaceId={}", workspaceId);
       throw new NotFoundException("Workspace with id " + workspaceId + " not found during Project create operation");

@@ -212,7 +212,7 @@ public class BoardServiceImpl implements BoardService {
   public List<BoardColumnDto> changeColumnPosition(UUID boardId, Integer oldPosition, Integer newPosition) {
     log.info("board changeColumnPosition operation starts, boardId={}, oldPosition={}, newPosition={}",
             boardId, oldPosition, newPosition);
-    List<BoardColumn> columns = boardColumnRepository.findAllByBoardIdOrderByPositionAsc(boardId);
+    List<BoardColumn> columns = boardColumnRepository.findAllByBoardIdOrderByPositionAscPessLock(boardId);
 
     if (columns.isEmpty()) {
       log.error("board columns not found, boardId={}", boardId);

@@ -1,5 +1,6 @@
 package org.example.taskmanager.taskmanager.service;
 
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.controller.dto.response.AuditEntityDto;
 import org.example.taskmanager.taskmanager.domain.entity.AuditEntity;
@@ -25,6 +26,7 @@ public class AuditEntityServiceImpl implements AuditEntityService {
     this.mapper = mapper;
   }
 
+  @Transactional
   @Override
   public void create(UUID taskId, UUID userId, String fieldName, String oldValue, String newValue) {
     log.info("creating audit entity, taskId={}, userId={}, fieldName={}, oldValue={}, newValue={}",
@@ -35,6 +37,7 @@ public class AuditEntityServiceImpl implements AuditEntityService {
     log.debug("audit entity created and saved in database, auditEntityId={}", auditEntity.getId());
   }
 
+  @Transactional
   @Override
   public List<AuditEntityDto> getTaskChangesHistory(UUID taskId) {
     log.info("audit entity getTaskChangesHistory operation starts, taskId={}", taskId);
