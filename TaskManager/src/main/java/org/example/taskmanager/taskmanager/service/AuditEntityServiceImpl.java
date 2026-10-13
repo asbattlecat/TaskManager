@@ -3,7 +3,7 @@ package org.example.taskmanager.taskmanager.service;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.controller.dto.response.AuditEntityDto;
-import org.example.taskmanager.taskmanager.domain.entity.AuditEntity;
+import org.example.taskmanager.taskmanager.domain.entity.AuditEntry;
 import org.example.taskmanager.taskmanager.mapper.AuditEntityMapper;
 import org.example.taskmanager.taskmanager.repository.AuditEntityRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.AuditEntityService;
@@ -31,10 +31,10 @@ public class AuditEntityServiceImpl implements AuditEntityService {
   public void create(UUID taskId, UUID userId, String fieldName, String oldValue, String newValue) {
     log.info("creating audit entity, taskId={}, userId={}, fieldName={}, oldValue={}, newValue={}",
             taskId, userId, fieldName, oldValue, newValue);
-    AuditEntity auditEntity = new AuditEntity(taskId, userId, fieldName, oldValue, newValue);
-    auditEntityRepository.save(auditEntity);
+    AuditEntry auditEntry = new AuditEntry(taskId, userId, fieldName, oldValue, newValue);
+    auditEntityRepository.save(auditEntry);
 
-    log.debug("audit entity created and saved in database, auditEntityId={}", auditEntity.getId());
+    log.debug("audit entity created and saved in database, auditEntityId={}", auditEntry.getId());
   }
 
   @Transactional
@@ -42,7 +42,7 @@ public class AuditEntityServiceImpl implements AuditEntityService {
   public List<AuditEntityDto> getTaskChangesHistory(UUID taskId) {
     log.info("audit entity getTaskChangesHistory operation starts, taskId={}", taskId);
 
-    List<AuditEntity> entities = auditEntityRepository.findAllByTaskIdOrderByTimestampAsc(taskId);
+    List<AuditEntry> entities = auditEntityRepository.findAllByTaskIdOrderByTimestampAsc(taskId);
 
     log.debug("audit entity getTaskChangesHistory operation completed, taskId={}", taskId);
     return entities.stream().map(mapper::toDto).toList();

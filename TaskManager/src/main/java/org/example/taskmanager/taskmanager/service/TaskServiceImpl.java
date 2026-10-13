@@ -407,8 +407,8 @@ public class TaskServiceImpl implements TaskService {
 
     workspaceAccessChecker.check(task, workspaceMemberId);
 
-    Comment comment = new Comment(taskId, workspaceMemberId, content);
-    commentRepository.save(comment);
+//    Comment comment = new Comment(taskId, workspaceMemberId, content);
+//    commentRepository.save(comment);
 
     log.debug("task addComment operation completed, taskId={}, workspaceMemberId={}, content={}",
             taskId, workspaceMemberId, content);
@@ -422,12 +422,10 @@ public class TaskServiceImpl implements TaskService {
             taskId, name, color);
     getTask(taskId, "addTag");
 
-    Tag tag = new Tag(taskId, name, color);
-    tagRepository.save(tag);
 
     log.debug("task addTag operation completed, taskId={}, name={}, color={}",
             taskId, name, color);
-    return tagMapper.toDto(tag);
+//    return tagMapper.toDto(tag);
   }
 
   @Transactional

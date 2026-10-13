@@ -1,7 +1,6 @@
 package org.example.taskmanager.taskmanager.repository;
 
 import jakarta.persistence.LockModeType;
-import org.example.taskmanager.taskmanager.domain.entity.AuditEntity;
 import org.example.taskmanager.taskmanager.domain.entity.Task;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;

@@ -7,7 +7,6 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.annotations.Immutable;
 
 import java.time.Instant;
@@ -15,32 +14,33 @@ import java.util.UUID;
 
 @Getter
 @Entity
-@Immutable
 @Table(name = "audit_entity")
-public class AuditEntity {
+@NoArgsConstructor
+@Immutable
+public class AuditEntry {
   @Id
-  private final UUID id;
+  private UUID id;
 
   @Column(nullable = false, updatable = false)
-  private final UUID taskId;
-
-  @Column(updatable = false)
-  private final UUID userId;
+  private UUID taskId;
 
   @Column(nullable = false, updatable = false)
-  private final String fieldName;
+  private UUID userId;
 
   @Column(nullable = false, updatable = false)
-  private final String oldValue;
+  private String fieldName;
 
   @Column(nullable = false, updatable = false)
-  private final String newValue;
+  private String oldValue;
 
   @Column(nullable = false, updatable = false)
-  private final Instant timestamp;
+  private String newValue;
 
-  public AuditEntity(@NotNull UUID taskId, UUID userId, @NotNull String fieldName, @NotNull String oldValue,
-                     @NotNull String newValue) {
+  @Column(nullable = false, updatable = false)
+  private Instant timestamp;
+
+  public AuditEntry(@NotNull UUID taskId, @NotNull UUID userId, @NotNull String fieldName, @NotNull String oldValue,
+                    @NotNull String newValue) {
     id = UUID.randomUUID();
 
     this.taskId = taskId;
@@ -50,15 +50,5 @@ public class AuditEntity {
     this.newValue = newValue;
 
     this.timestamp = Instant.now();
-  }
-
-  public AuditEntity() {
-    id = null;
-    taskId = null;
-    userId = null;
-    fieldName = null;
-    oldValue = null;
-    newValue = null;
-    timestamp = null;
   }
 }

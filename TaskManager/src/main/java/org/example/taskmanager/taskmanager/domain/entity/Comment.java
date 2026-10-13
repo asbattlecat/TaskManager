@@ -1,26 +1,27 @@
 package org.example.taskmanager.taskmanager.domain.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
+@Slf4j
 @Getter
-@Setter
 @NoArgsConstructor
 @Entity
 public class Comment {
   @Id
   private UUID id;
 
-  @Column(nullable = false)
-  private UUID taskId;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "task_id", nullable = false, updatable = false)
+  private Task task;
 
   @Column(nullable = false)
   private UUID authorId;
@@ -29,18 +30,38 @@ public class Comment {
   private String content;
 
   @Column(nullable = false)
-  private Instant cratedAt;
+  private Instant createdAt;
 
   @Column
   private Instant updatedAt;
 
-  public Comment(@NotNull UUID taskId, @NotNull UUID authorId, @NotNull String content) {
+  public Comment(@NotNull Task task, @NotNull UUID authorId, @NotNull String content) {
     id = UUID.randomUUID();
 
-    this.taskId = taskId;
+    this.task = task;
     this.authorId = authorId;
     this.content = content;
 
-    this.cratedAt = Instant.now();
+    this.createdAt = Instant.now();
+    updatedAt = Instant.now();
+  }
+
+  public void changeContent(String content) {
+    if (Objects.equals(this.content, content)) return;
+
+    this.content = content;
+    updatedAt = Instant.now();
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (this == object) return true;
+    if (!(object instanceof Comment comment)) return false;
+    return id != null && id.equals(comment.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(id);
   }
 }
