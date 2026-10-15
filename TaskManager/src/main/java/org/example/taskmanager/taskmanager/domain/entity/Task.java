@@ -102,6 +102,18 @@ public class Task extends AggregateRoot {
     updatedAt = Instant.now();
   }
 
+  @Override
+  public boolean equals(Object object) {
+    if (this == object) return true;
+    if (!(object instanceof Task task)) return false;
+    return id != null && id.equals(task.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(id);
+  }
+
   // =========== архивация =============
 
   public void archive(ArchiveReason reason) {
@@ -156,7 +168,7 @@ public class Task extends AggregateRoot {
     UUID old = columnId;
     this.columnId = newColumnId;
     touch();
-    log.debug("task changeColumnId operation, id={}, old={}, new={}", id, old, newColumnId);
+    log.debug("task changeColumnId completed, id={}, old={}, new={}", id, old, newColumnId);
   }
 
   public void changeName(String newName) {
@@ -166,7 +178,7 @@ public class Task extends AggregateRoot {
     String old = name;
     this.name = newName;
     touch();
-    log.debug("task changeName operation, id={}, old={}, new={}", id, old, newName);
+    log.debug("task changeName completed, id={}, old={}, new={}", id, old, newName);
   }
 
   public void changeDescription(String newDescription) {
@@ -257,7 +269,7 @@ public class Task extends AggregateRoot {
 
   private void checkIsActive(String operationName) {
     if (archiveState != ArchiveState.ACTIVE)
-      throw new IllegalStateException("Cannot do " + operationName + ", task is not active, id=" + id);
+      throw new IllegalStateException("Cannot do " + operationName + ", task is archived, id=" + id);
   }
 
   private void touch() {

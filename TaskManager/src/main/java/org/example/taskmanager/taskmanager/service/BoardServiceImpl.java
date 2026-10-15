@@ -163,9 +163,7 @@ public class BoardServiceImpl implements BoardService {
   @Transactional
   @Override
   public List<TaskDto> getTasks(UUID boardId) {
-    log.info("board getTasks operation starts, boardId={}", boardId);
     Board board = getBoard(boardId, "getTasks");
-
     isBoardActive(board, "getTasks");
 
     List<Task> tasks = taskRepository.findAllByBoardId(boardId);
@@ -293,7 +291,6 @@ public class BoardServiceImpl implements BoardService {
 
   private void isBoardActive(Board board, String operationName) {
     if (board.getArchiveState() != ArchiveState.ACTIVE) {
-      log.error("cannot do {}, board is archived, boardId={}", operationName, board.getId());
       throw new IllegalStateException("Cannot do " + operationName
               + " operation because board with id " + board.getId() + " is archived");
     }

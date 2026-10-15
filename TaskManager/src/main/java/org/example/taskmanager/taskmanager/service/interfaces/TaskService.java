@@ -18,15 +18,15 @@ public interface TaskService {
   List<TaskDto> archiveByBoard(UUID boardId, ArchiveReason reason);
   TaskDto unarchive(UUID taskId, UnarchiveReason reason);
   List<TaskDto> unarchiveByBoard(UUID boardId, UnarchiveReason reason);
-  TaskDto changeName(UUID taskId, String newName, UUID userId);
-  TaskDto changeDescription(UUID taskId, String newDescription, UUID userId);
-  TaskDto changePriority(UUID taskId, TaskPriority newPriority, UUID userId);
-  TaskDto changeColumnId(UUID taskId, UUID newColumnId, UUID userId);
-  TaskDto changeDeadline(UUID taskId, Instant newDeadline, UUID userId);
-  TaskDto changeStatus(UUID taskId, TaskStatus newStatus, UUID userId);
-  TaskDto setAssignee(UUID taskId, UUID workspaceMemberId, UUID userId);
+  TaskDto changeName(UUID taskId, String newName, UUID memberId);
+  TaskDto changeDescription(UUID taskId, String newDescription, UUID memberId);
+  TaskDto changePriority(UUID taskId, TaskPriority newPriority, UUID memberId);
+  TaskDto changeColumnId(UUID taskId, UUID newColumnId, UUID memberId);
+  TaskDto changeDeadline(UUID taskId, Instant newDeadline, UUID memberId);
+  TaskDto changeStatus(UUID taskId, TaskStatus newStatus, UUID memberId);
+  TaskDto changeAssigneeId(UUID taskId, UUID workspaceMemberId, UUID memberId);
   CommentDto addComment(UUID taskId, UUID workspaceMemberId, String content);
-  TagDto addTag(UUID taskId, String name, TagColor color);
+  TagDto addTag(UUID taskId, String name, TagColor color, UUID memberId);
   List<TaskDto> filter(UUID boardId, TaskStatus status, UUID assigneeId, Tag tag);
-  List<AuditEntityDto> getTaskChangesHistory(UUID taskId);
+  List<AuditEntityDto> getTaskChangesHistory(UUID taskId, UUID memberId);
 }

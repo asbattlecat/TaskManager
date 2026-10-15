@@ -10,4 +10,6 @@ public interface BoardAccessPort {
   boolean exists(UUID boardId);
   boolean isActive(UUID boardId);
   void requireActive(UUID boardId, String operationName);
+  boolean isBoardKanban(UUID boardId);
+  void requireColumnOfBoard(UUID boardId, UUID columnId);
 }

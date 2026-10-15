@@ -18,6 +18,7 @@ import org.example.taskmanager.taskmanager.domain.enums.BoardType;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
 @Getter
@@ -40,7 +41,7 @@ public class Board extends AggregateRoot {
   @Column
   private String description;
 
-  @Column(nullable = false)
+  @Column(nullable = false, updatable = false)
   private BoardType type;
 
   @Column(nullable = false)
@@ -64,6 +65,8 @@ public class Board extends AggregateRoot {
 
     createdAt = Instant.now();
   }
+
+  // ========= работа с архивацией/разархивацией =========
 
   public void archive(ArchiveReason reason) {
     if (archiveState != ArchiveState.ACTIVE) {
@@ -110,7 +113,38 @@ public class Board extends AggregateRoot {
     };
   }
 
+  // =========== изменение полей =========
+
+  public void changeName(String newName) {
+    if (Objects.equals(name, newName)) return;
+    checkIsActive("changeName");
+
+    String old = name;
+    this.name = newName;
+    touch();
+    log.debug("board changeName completed, id={}, old={}, new={}", id, old, newName);
+  }
+
+  public void changeDescription(String newDescription) {
+    if (Objects.equals(description, newDescription)) return;
+    checkIsActive("changeDescription");
+
+    String old = description;
+    this.description = newDescription;
+    touch();
+    log.debug("board changeDescription completed, if={}, old={}, new={}", id, old, newDescription);
+  }
+
+  // ====== helpers =========
+
   private void touch() {
     updatedAt = Instant.now();
+  }
+
+  private void checkIsActive(String operationName) {
+    if (archiveState != ArchiveState.ACTIVE) {
+      throw new IllegalStateException("Cannot do " + operationName
+              + ", board is archived, id=" + id);
+    }
   }
 }
