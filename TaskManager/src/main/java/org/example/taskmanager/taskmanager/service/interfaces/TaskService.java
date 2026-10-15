@@ -21,7 +21,7 @@ public interface TaskService {
   TaskDto changeName(UUID taskId, String newName, UUID userId);
   TaskDto changeDescription(UUID taskId, String newDescription, UUID userId);
   TaskDto changePriority(UUID taskId, TaskPriority newPriority, UUID userId);
-  TaskDto changeColumn(UUID taskId, UUID newColumnId);
+  TaskDto changeColumnId(UUID taskId, UUID newColumnId, UUID userId);
   TaskDto changeDeadline(UUID taskId, Instant newDeadline, UUID userId);
   TaskDto changeStatus(UUID taskId, TaskStatus newStatus, UUID userId);
   TaskDto setAssignee(UUID taskId, UUID workspaceMemberId, UUID userId);

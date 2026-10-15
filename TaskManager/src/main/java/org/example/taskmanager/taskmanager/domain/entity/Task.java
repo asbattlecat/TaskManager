@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.domain.event.TaskArchivedEvent;
 import org.example.taskmanager.taskmanager.domain.event.TaskUnarchivedEvent;
@@ -17,7 +16,7 @@ import java.util.*;
 
 @Getter
 @NoArgsConstructor
-@Entity
+@Entity(name = "task")
 @Slf4j
 public class Task extends AggregateRoot {
   @Id
@@ -29,10 +28,10 @@ public class Task extends AggregateRoot {
   @Column(nullable = false)
   private UUID boardId;
 
-  // --------- для kanban ----------
+  // ========== для kanban ==========
   @Column
   private UUID columnId;
-  // --------- для kanban ----------
+  // ========== для kanban ==========
 
   @Column(nullable = false)
   private String name;
@@ -119,6 +118,7 @@ public class Task extends AggregateRoot {
 
     log.info("task archived, id={}, reason={}", id, reason);
     registerEvent(new TaskArchivedEvent(id));
+    touch();
   }
 
   public void unarchive(UnarchiveReason reason) {
@@ -133,6 +133,7 @@ public class Task extends AggregateRoot {
 
     log.info("task unarchived, id={}, reason={}", id, reason);
     registerEvent(new TaskUnarchivedEvent(id));
+    touch();
   }
 
   public boolean canBeUnarchived(UnarchiveReason reason) {
@@ -155,7 +156,7 @@ public class Task extends AggregateRoot {
     UUID old = columnId;
     this.columnId = newColumnId;
     touch();
-    log.debug("task changeColumnId operation completed, id={}, old={}, new={}", id, old, newColumnId);
+    log.debug("task changeColumnId operation, id={}, old={}, new={}", id, old, newColumnId);
   }
 
   public void changeName(String newName) {
@@ -165,7 +166,7 @@ public class Task extends AggregateRoot {
     String old = name;
     this.name = newName;
     touch();
-    log.debug("task changeName operation completed, id={}, old={}, new={}", id, old, newName);
+    log.debug("task changeName operation, id={}, old={}, new={}", id, old, newName);
   }
 
   public void changeDescription(String newDescription) {
@@ -175,28 +176,28 @@ public class Task extends AggregateRoot {
     String old = description;
     this.description = newDescription;
     touch();
-    log.debug("task changeDescription operation completed, id={}, old={}, new={}", id, old, newDescription);
+    log.debug("task changeDescription completed, id={}, old={}, new={}", id, old, newDescription);
   }
 
   public void changeStatus(TaskStatus newStatus) {
     log.info("task changeStatus operation starts, id={}, newStatus={}", id, newStatus);
-    if (Objects.equals(status, newStatus)) return;
+    if (status == newStatus) return;
     checkIsActive("changeStatus");
 
     TaskStatus old = status;
     this.status = newStatus;
     touch();
-    log.debug("task changeStatus operation completed, id={}, old={}, new={}", id, old, newStatus);
+    log.debug("task changeStatus completed, id={}, old={}, new={}", id, old, newStatus);
   }
 
   public void changePriority(TaskPriority newPriority) {
-    if (Objects.equals(priority, newPriority)) return;
+    if (priority == newPriority) return;
     checkIsActive("changePriority");
 
     TaskPriority old = priority;
     this.priority = newPriority;
     touch();
-    log.debug("task changePriority operation completed, id={}, old={}, new={}", id, old, newPriority);
+    log.debug("task changePriority completed, id={}, old={}, new={}", id, old, newPriority);
   }
 
   public void changeAssigneeId(UUID newAssigneeId) {
@@ -207,7 +208,7 @@ public class Task extends AggregateRoot {
     UUID old = assigneeId;
     this.assigneeId = newAssigneeId;
     touch();
-    log.debug("task changeAssignee operation completed, id={}, old={}, new={}", id, old, newAssigneeId);
+    log.debug("task changeAssignee completed, id={}, old={}, new={}", id, old, newAssigneeId);
   }
 
   public void changeDeadline(Instant newDeadline) {
@@ -217,29 +218,27 @@ public class Task extends AggregateRoot {
     Instant old = deadline;
     this.deadline = newDeadline;
     touch();
-    log.debug("task changeDeadline operation completed, id={}, old={}, new={}", id, old, newDeadline);
+    log.debug("task changeDeadline completed, id={}, old={}, new={}", id, old, newDeadline);
   }
 
   public Comment addComment(UUID authorId, String content) {
     checkIsActive("addComment");
 
-    if (authorId == null || content == null) {
+    if (authorId == null || content == null)
       throw new IllegalArgumentException("Task addComment operation: authorId or content is null");
-    }
 
     Comment comment = new Comment(this, authorId, content);
     comments.add(comment);
     touch();
-    log.debug("task addComment operation completed, id={}, commentId={}", id, comment.getId());
+    log.debug("task addComment completed, id={}, commentId={}", id, comment.getId());
     return comment;
   }
 
   public Tag addTag(String name, TagColor color) {
     checkIsActive("addTag");
 
-    if (name == null || color == null) {
+    if (name == null || color == null)
       throw new IllegalArgumentException("Task addTag operation: name or color is null");
-    }
 
     boolean exists = tags.stream()
             .anyMatch(t -> t.getName().equalsIgnoreCase(name));
@@ -249,8 +248,8 @@ public class Task extends AggregateRoot {
     Tag tag = new Tag(this, name, color);
     tags.add(tag);
     touch();
-    log.debug("task addTag operation completed, id={}, tagId={}", id, tag.getId());
 
+    log.debug("task addTag completed, id={}, tagId={}", id, tag.getId());
     return tag;
   }
 

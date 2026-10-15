@@ -48,7 +48,7 @@ public class BoardEventListener {
     UUID id = event.boardId();
     log.info("cascade task archiveByBoard operation starts, boardId={}", id);
     try {
-      taskService.archiveByBoard(event.boardId(), ArchiveReason.PARENT_ARCHIVED);
+      taskService.archiveByBoard(id, ArchiveReason.PARENT_ARCHIVED);
       log.debug("cascade task archiveByBoard operation completed, boardId={}", id);
     } catch (Exception ex) {
       log.error("cascade task archiveByBoard operation failed, boardId={}", id);
@@ -77,7 +77,7 @@ public class BoardEventListener {
     UUID id = event.boardId();
     log.info("cascade task unarchiveByBoard operation starts, boardId={}", id);
     try {
-      taskService.unarchiveByBoard(event.boardId(), UnarchiveReason.CASCADE);
+      taskService.unarchiveByBoard(id, UnarchiveReason.CASCADE);
       log.debug("cascade task unarchiveByBoard operation completed, boardId={}", id);
     } catch (Exception ex) {
       log.error("cascade task unarchiveByBoard operation failed, boardId={}", id);

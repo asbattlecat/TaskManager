@@ -21,7 +21,6 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Getter
-@Setter
 @NoArgsConstructor
 @Entity
 @Slf4j
@@ -80,6 +79,8 @@ public class Board extends AggregateRoot {
 
     log.debug("board archived, id={}", id);
     registerEvent(new BoardArchivedEvent(id));
+
+    touch();
   }
 
   public void unarchive(UnarchiveReason reason) {
@@ -94,6 +95,8 @@ public class Board extends AggregateRoot {
 
     log.debug("board unarchived, id={}", id);
     registerEvent(new BoardUnarchivedEvent(id));
+
+    touch();
   }
 
   public boolean canBeUnarchived(UnarchiveReason reason) {
@@ -105,5 +108,9 @@ public class Board extends AggregateRoot {
       case ACTIVE ->
               false;
     };
+  }
+
+  private void touch() {
+    updatedAt = Instant.now();
   }
 }

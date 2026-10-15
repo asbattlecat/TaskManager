@@ -24,7 +24,7 @@ public class AuditEntry {
   @Column(nullable = false, updatable = false)
   private UUID taskId;
 
-  @Column(nullable = false, updatable = false)
+  @Column(updatable = false)
   private UUID userId;
 
   @Column(nullable = false, updatable = false)
@@ -39,7 +39,7 @@ public class AuditEntry {
   @Column(nullable = false, updatable = false)
   private Instant timestamp;
 
-  public AuditEntry(@NotNull UUID taskId, @NotNull UUID userId, @NotNull String fieldName, @NotNull String oldValue,
+  public AuditEntry(@NotNull UUID taskId, UUID userId, @NotNull String fieldName, @NotNull String oldValue,
                     @NotNull String newValue) {
     id = UUID.randomUUID();
 

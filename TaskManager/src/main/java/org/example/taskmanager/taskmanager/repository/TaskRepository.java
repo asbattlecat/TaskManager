@@ -16,8 +16,8 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("""
-    SELECT t 
-    FROM task AS t 
+    SELECT t
+    FROM task AS t
     WHERE t.boardId = :boardId
   """)
   List<Task> findTasksByBoardIdWithPessimisticWriteLock(@Param("boardId") UUID boardId);
