@@ -2,7 +2,6 @@ package org.example.taskmanager.taskmanager.infrastructure.security;
 
 import org.example.taskmanager.taskmanager.domain.entity.Board;
 import org.example.taskmanager.taskmanager.domain.entity.Project;
-import org.example.taskmanager.taskmanager.domain.entity.Task;
 import org.example.taskmanager.taskmanager.domain.entity.WorkspaceMember;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceMemberState;
@@ -39,9 +38,9 @@ public class WorkspaceAccessCheckerImpl implements WorkspaceAccessChecker {
    */
   @Override
   public void check(UUID boardId, UUID workspaceMemberId) {
+    UUID workspaceId = getWorkspaceIdByBoard(boardId);
     WorkspaceMember member = getMember(workspaceMemberId);
     requireMemberActive(member);
-    UUID workspaceId = getWorkspaceIdByBoard(boardId);
     requireMemberPartOfWorkspace(member, workspaceId);
   }
 

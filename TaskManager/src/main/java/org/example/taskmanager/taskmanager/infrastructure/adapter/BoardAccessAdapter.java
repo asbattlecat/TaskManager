@@ -71,6 +71,14 @@ public class BoardAccessAdapter implements BoardAccessPort {
     return getBoard(boardId).getType() == BoardType.KANBAN;
   }
 
+  @Override
+  public void requireKanban(UUID boardId, String operationName) {
+    if (!isBoardKanban(boardId)) {
+      throw new IllegalStateException("Cannot do " + operationName
+              + " because board with id is not kanban type");
+    }
+  }
+
   /**
    * Проверка на то, что BoardColumn с указанным columnId является
    * частью Board с указанным BoardId

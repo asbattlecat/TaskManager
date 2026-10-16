@@ -24,14 +24,13 @@ public class TaskSpecification {
             assigneeId == null ? null : cb.equal(root.get("assigneeId"), assigneeId);
   }
 
-  public static Specification<Task> tagContains(Tag tag) {
+  public static Specification<Task> tagContains(String tagName) {
     return (root, query, cb) -> {
       Root<Tag> tagRoot = query.from(Tag.class);
 
       return cb.and(
               cb.equal(tagRoot.get("taskId"), root.get("id")),
-              cb.equal(tagRoot.get("name"), tag.getName()),
-              cb.equal(tagRoot.get("color"), tag.getColor())
+              cb.equal(tagRoot.get("name"), tagName)
       );
     };
   }

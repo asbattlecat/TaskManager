@@ -14,10 +14,10 @@ import java.util.UUID;
 public interface TaskService {
   TaskDto create(UUID boardId, UUID columnId, String name, String description, TaskStatus status,
                  TaskPriority priority, UUID assigneeId, UUID creatorId, Instant deadline);
-  TaskDto archive(UUID taskId, ArchiveReason archiveReason);
-  List<TaskDto> archiveByBoard(UUID boardId, ArchiveReason reason);
-  TaskDto unarchive(UUID taskId, UnarchiveReason reason);
-  List<TaskDto> unarchiveByBoard(UUID boardId, UnarchiveReason reason);
+  TaskDto archive(UUID taskId, ArchiveReason archiveReason, UUID memberId);
+  void archiveByBoard(UUID boardId, ArchiveReason reason);
+  TaskDto unarchive(UUID taskId, UnarchiveReason reason, UUID memberId);
+  void unarchiveByBoard(UUID boardId, UnarchiveReason reason);
   TaskDto changeName(UUID taskId, String newName, UUID memberId);
   TaskDto changeDescription(UUID taskId, String newDescription, UUID memberId);
   TaskDto changePriority(UUID taskId, TaskPriority newPriority, UUID memberId);
@@ -27,6 +27,7 @@ public interface TaskService {
   TaskDto changeAssigneeId(UUID taskId, UUID workspaceMemberId, UUID memberId);
   CommentDto addComment(UUID taskId, UUID workspaceMemberId, String content);
   TagDto addTag(UUID taskId, String name, TagColor color, UUID memberId);
-  List<TaskDto> filter(UUID boardId, TaskStatus status, UUID assigneeId, Tag tag);
+  List<TaskDto> filter(UUID boardId, TaskStatus status, UUID assigneeId, String tagName,
+                       UUID workspaceMemberId);
   List<AuditEntityDto> getTaskChangesHistory(UUID taskId, UUID memberId);
 }

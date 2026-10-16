@@ -265,12 +265,13 @@ public class Task extends AggregateRoot {
     return tag;
   }
 
-  // ===================== вспомогательные методы =====================
-
-  private void checkIsActive(String operationName) {
+  public void checkIsActive(String operationName) {
     if (archiveState != ArchiveState.ACTIVE)
       throw new IllegalStateException("Cannot do " + operationName + ", task is archived, id=" + id);
   }
+
+  // ===================== вспомогательные методы =====================
+
 
   private void touch() {
     updatedAt = Instant.now();
