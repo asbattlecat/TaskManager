@@ -1,6 +1,7 @@
 package org.example.taskmanager.taskmanager.service.interfaces;
 
 import org.example.taskmanager.taskmanager.domain.records.CascadeArchiveResult;
+import org.example.taskmanager.taskmanager.domain.records.CascadeUnarchiveResult;
 
 import java.util.UUID;
 
@@ -35,4 +36,8 @@ public interface CascadeArchiveService {
    * @return Результат каскадной архивации
    */
   CascadeArchiveResult archiveByBoard(UUID boardId);
+
+  CascadeUnarchiveResult unarchiveByWorkspace(UUID workspaceId);
+  CascadeUnarchiveResult unarchiveByProject(UUID projectid);
+  CascadeUnarchiveResult unarchiveByBoard(UUID boardId);
 }

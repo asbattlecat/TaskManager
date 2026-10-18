@@ -10,6 +10,8 @@ import java.util.UUID;
 public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificationExecutor<Task> {
   List<Task> findAllByBoardId(UUID boardId);
 
+  // ================= archive =================
+
   @Modifying(clearAutomatically = true)
   @Query(value = """
       UPDATE task
@@ -48,6 +50,49 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
           updated_at = CURRENT_TIMESTAMP
       WHERE board_id = :boardId
           AND archive_state = 'ACTIVE'
+      RETURNING id
   """, nativeQuery = true)
   List<UUID> archiveByBoard(@Param("boardId") UUID boardId);
+
+  // ============ unarchive ===============
+
+  @Modifying(clearAutomatically = true)
+  @Query(value = """
+      UPDATE task AS t
+      SET archive_state = 'ACTIVE',
+          updated_at = CURRENT_TIMESTAMP
+      FROM board AS b
+      JOIN project AS p ON p.id = b.project_id
+      WHERE t.board_id = b.id
+          AND p.workspace_id = :workspaceId
+          AND b.archive_state = 'ACTIVE'
+          AND t.archive_state = 'PARENT_ARCHIVED'
+      RETURNING t.id
+  """, nativeQuery = true)
+  List<UUID> unarchiveByWorkspace(@Param("workspaceId") UUID workspaceId);
+
+  @Modifying(clearAutomatically = true)
+  @Query(value = """
+      UPDATE task AS t
+      SET archive_state = 'ACTIVE',
+          updated_at = CURRENT_TIMESTAMP
+      FROM board AS b
+      WHERE t.board_id = b.id
+          AND b.project_id = :projectId
+          AND b.archive_state = 'ACTIVE'
+          AND t.archive_state = 'PARENT_ARCHIVED'
+      RETURNING t.id
+  """, nativeQuery = true)
+  List<UUID> unarchiveByProject(@Param("projectId") UUID projectId);
+
+  @Modifying(clearAutomatically = true)
+  @Query(value = """
+      UPDATE task
+      SET archive_state = 'ACTIVE',
+          updated_at = CURRENT_TIMESTAMP
+      WHERE board_id = :boardId
+          AND archive_state = 'PARENT_ARCHIVED'
+      RETURNING id
+  """, nativeQuery = true)
+  List<UUID> unarchiveByBoard(@Param("boardId") UUID boardId);
 }

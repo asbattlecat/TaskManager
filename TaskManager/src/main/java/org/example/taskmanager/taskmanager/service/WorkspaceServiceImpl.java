@@ -9,6 +9,7 @@ import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceRole;
+import org.example.taskmanager.taskmanager.domain.records.CascadeArchiveResult;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEventPublisher;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.mapper.ProjectMapper;
@@ -16,6 +17,7 @@ import org.example.taskmanager.taskmanager.mapper.WorkspaceMapper;
 import org.example.taskmanager.taskmanager.repository.ProjectRepository;
 import org.example.taskmanager.taskmanager.repository.UserRepository;
 import org.example.taskmanager.taskmanager.repository.WorkspaceRepository;
+import org.example.taskmanager.taskmanager.service.interfaces.CascadeArchiveService;
 import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceMemberService;
 import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceService;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ import java.util.UUID;
 @Service
 public class WorkspaceServiceImpl implements WorkspaceService {
   private final WorkspaceMemberService workspaceMemberService;
+  private final CascadeArchiveService cascadeArchiveService;
   private final DomainEventPublisher domainEventPublisher;
   private final WorkspaceRepository workspaceRepository;
   private final ProjectRepository projectRepository;
@@ -38,6 +41,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
   public WorkspaceServiceImpl(
           WorkspaceMemberService workspaceMemberService,
+          CascadeArchiveService cascadeArchiveService,
           DomainEventPublisher domainEventPublisher,
           WorkspaceRepository workspaceRepository,
           ProjectRepository projectRepository,
@@ -46,6 +50,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
           ProjectMapper projectMapper
   ) {
     this.workspaceMemberService = workspaceMemberService;
+    this.cascadeArchiveService = cascadeArchiveService;
     this.domainEventPublisher = domainEventPublisher;
     this.workspaceRepository = workspaceRepository;
     this.projectRepository = projectRepository;
@@ -90,10 +95,14 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
     workspace.archive(reason);
     workspaceRepository.save(workspace);
-    workspace.getEvents().forEach(domainEventPublisher::publish);
-    workspace.clearEvents();
 
-    log.debug("workspace archive completed, workspaceId={}, reason={}", workspaceId, reason);
+    CascadeArchiveResult result = cascadeArchiveService.archiveByWorkspace(workspaceId);
+    log.debug("workspace archive completed, workspaceId={}, cascaded projects={}, boards={}, tasks={}",
+            workspaceId,
+            result.projectsArchived(),
+            result.boardsArchived(),
+            result.tasksArchived()
+    );
     return workspaceMapper.toDto(workspace);
   }
 

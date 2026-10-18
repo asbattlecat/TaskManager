@@ -23,7 +23,7 @@ public interface TaskService {
    * @return TaskDTO - результат работы
    */
   TaskDto archive(UUID taskId, UUID memberId);
-  void archiveByBoard(UUID boardId, ArchiveReason reason);  /**
+  /**
    * Разархивация Task сущности. Этот метод предназначен для ручной разархивации сущности
    * (UnarchiveReason == USER_ACTION)
    * @param taskId Task ID (UUID)
@@ -31,7 +31,6 @@ public interface TaskService {
    * @return TaskDTO - результат работы
    */
   TaskDto unarchive(UUID taskId, UUID memberId);
-  void unarchiveByBoard(UUID boardId, UnarchiveReason reason);
   TaskDto changeName(UUID taskId, String newName, UUID memberId);
   TaskDto changeDescription(UUID taskId, String newDescription, UUID memberId);
   TaskDto changePriority(UUID taskId, TaskPriority newPriority, UUID memberId);

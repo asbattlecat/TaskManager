@@ -14,6 +14,8 @@ import java.util.UUID;
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
   List<Project> findAllByWorkspaceId(UUID workspaceId);
 
+  // ================== archive =====================
+
   @Modifying(clearAutomatically = true)
   @Query(value = """ 
       UPDATE project
@@ -24,4 +26,17 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
       RETURNING id
   """, nativeQuery = true)
   List<UUID> archiveByWorkspace(@Param("workspaceId") UUID workspaceId);
+
+  // ================ unarchive ======================
+
+  @Modifying(clearAutomatically = true)
+  @Query(value = """
+      UPDATE project
+      SET archive_state = 'ACTIVE',
+          updated_at = CURRENT_TIMESTAMP
+      WHERE workspace_id = :workspaceId
+          AND archive_state = 'PARENT_ARCHIVED'
+      RETURNING id
+  """, nativeQuery = true)
+  List<UUID> unarchiveByWorkspace(@Param("workspaceId") UUID workspaceId);
 }

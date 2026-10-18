@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.UUID;
 
 public interface BoardRepository extends JpaRepository<Board, UUID> {
+  List<Board> findAllByProjectId(UUID projectId);
+
+  // =============== archive =======================
 
   @Modifying(clearAutomatically = true)
   @Query(value = """
@@ -39,5 +42,30 @@ public interface BoardRepository extends JpaRepository<Board, UUID> {
   """, nativeQuery = true)
   List<UUID> archiveByProject(@Param("projectId") UUID projectId);
 
-  List<Board> findAllByProjectId(UUID projectId);
+  // ================= unarchive ====================
+
+  @Modifying(clearAutomatically = true)
+  @Query(value = """
+      UPDATE board AS b
+      SET archive_state = 'ACTIVE',
+          updated_at = CURRENT_TIMESTAMP
+      FROM project AS p
+      WHERE b.project_id = p.id
+          AND p.workspace_id = :workspaceId
+          AND p.archive_state = 'ACTIVE'
+          AND b.archive_state = 'PARENT_ARCHIVED'
+      RETURNING b.id
+  """, nativeQuery = true)
+  List<UUID> unarchiveByWorkspace(@Param("workspaceId") UUID workspaceId);
+
+  @Modifying(clearAutomatically = true)
+  @Query(value = """
+      UPDATE board
+      SET archive_state = 'ACTIVE',
+          updated_at = CURRENT_TIMESTAMP
+      WHERE project_id = :projectId
+          AND archive_state = 'PARENT_ARCHIVED'
+      RETURNING id
+  """, nativeQuery = true)
+  List<UUID> unarchiveByProject(@Param("projectId") UUID projectId);
 }
