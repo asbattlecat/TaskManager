@@ -15,6 +15,7 @@ import org.example.taskmanager.taskmanager.repository.UserRepository;
 import org.example.taskmanager.taskmanager.repository.WorkspaceMemberRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.UserService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -41,6 +42,7 @@ public class UserServiceImpl implements UserService {
     this.userMapper = userMapper;
   }
 
+  @Transactional
   @Override
   public UserDto create(String name, String email, String password) {
     log.info("creating user, name={}, email={}", name, email);
@@ -58,6 +60,7 @@ public class UserServiceImpl implements UserService {
     return userMapper.toDto(user);
   }
 
+  @Transactional
   @Override
   public UserDto updateUserInfo(UUID userId, UserDto dto) {
     log.info("user updateUserInfo operation starts, userId={}, userName={}, userEmail={}, userActive={}",
@@ -75,6 +78,7 @@ public class UserServiceImpl implements UserService {
     return userMapper.toDto(user);
   }
 
+  @Transactional
   @Override
   public UserDto updatePassword(UUID userId, String oldPassword, String newPassword) {
     log.info("user updatePassword operation starts, userId={}", userId);
@@ -94,6 +98,7 @@ public class UserServiceImpl implements UserService {
     return userMapper.toDto(user);
   }
 
+  @Transactional
   @Override
   public UserDto activate(UUID userId) {
     log.info("user activate operation starts, userId={}", userId);
@@ -108,6 +113,7 @@ public class UserServiceImpl implements UserService {
     return userMapper.toDto(user);
   }
 
+  @Transactional
   @Override
   public UserDto deactivate(UUID userId) {
     log.info("user deactivate operation starts, userId={}", userId);
@@ -122,6 +128,7 @@ public class UserServiceImpl implements UserService {
     return userMapper.toDto(user);
   }
 
+  @Transactional
   @Override
   public UserDto delete(UUID userId) {
     log.info("user delete operation starts, userId={}", userId);
@@ -138,6 +145,7 @@ public class UserServiceImpl implements UserService {
     return userMapper.toDto(user);
   }
 
+  @Transactional(readOnly = true)
   @Override
   public UserDto getById(UUID userId) {
     log.info("user getById operation starts, userId={}", userId);
@@ -147,6 +155,7 @@ public class UserServiceImpl implements UserService {
     return userMapper.toDto(user);
   }
 
+  @Transactional(readOnly = true)
   @Override
   public UserDto getByEmail(String email) {
     log.info("user getByEmail operation starts, email={}", email);
@@ -161,6 +170,8 @@ public class UserServiceImpl implements UserService {
     log.debug("user getByEmail operation completed, email={}", email);
     return userMapper.toDto(user);
   }
+
+  // ================== helpers ======================
 
   private User getUser(UUID userId) {
     return userRepository

@@ -113,8 +113,6 @@ public class TaskServiceImpl implements TaskService {
   }
 
   // ============================= архивация/разархивация ==============================
-  // ============================= архивация/разархивация ==============================
-  // ============================= архивация/разархивация ==============================
 
   @Transactional
   @Override
@@ -170,8 +168,6 @@ public class TaskServiceImpl implements TaskService {
     return taskMapper.toDto(task);
   }
 
-  // ============================= архивация/разархивация ==============================
-  // ============================= архивация/разархивация ==============================
   // ============================= архивация/разархивация ==============================
 
   @Transactional
@@ -482,7 +478,7 @@ public class TaskServiceImpl implements TaskService {
     return auditEntityService.getTaskChangesHistory(taskId);
   }
 
-  // ====================== вспомогательные методы ===================
+  // ====================== helpers ===================
 
   private Task getTask(UUID taskId, String operationName) {
     return taskRepository

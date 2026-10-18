@@ -1,6 +1,5 @@
 package org.example.taskmanager.taskmanager.service;
 
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.controller.dto.response.AuditEntityDto;
 import org.example.taskmanager.taskmanager.domain.entity.AuditEntry;
@@ -8,6 +7,7 @@ import org.example.taskmanager.taskmanager.mapper.AuditEntityMapper;
 import org.example.taskmanager.taskmanager.repository.AuditEntityRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.AuditEntityService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -29,8 +29,6 @@ public class AuditEntityServiceImpl implements AuditEntityService {
   @Transactional
   @Override
   public void create(UUID taskId, UUID userId, String fieldName, String oldValue, String newValue) {
-    log.info("creating audit entity, taskId={}, userId={}, fieldName={}, oldValue={}, newValue={}",
-            taskId, userId, fieldName, oldValue, newValue);
     AuditEntry auditEntry = new AuditEntry(taskId, userId, fieldName, oldValue, newValue);
     auditEntityRepository.save(auditEntry);
 
@@ -40,8 +38,6 @@ public class AuditEntityServiceImpl implements AuditEntityService {
   @Transactional
   @Override
   public List<AuditEntityDto> getTaskChangesHistory(UUID taskId) {
-    log.info("audit entity getTaskChangesHistory operation starts, taskId={}", taskId);
-
     List<AuditEntry> entities = auditEntityRepository.findAllByTaskIdOrderByTimestampAsc(taskId);
 
     log.debug("audit entity getTaskChangesHistory operation completed, taskId={}", taskId);

@@ -102,6 +102,7 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
     return workspaceMemberMapper.toDto(member);
   }
 
+  @Transactional
   @Override
   public List<WorkspaceMemberDto> archiveByUser(UUID userId) {
     log.info("workspace member archiveByUser operation starts, userId={}", userId);
@@ -120,6 +121,7 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
     return members.stream().map(workspaceMemberMapper::toDto).toList();
   }
 
+  @Transactional
   @Override
   public List<WorkspaceMemberDto> unarchiveByUser(UUID userId) {
     log.info("workspace member unarchiveByUser operation starts, userId={}", userId);
@@ -138,6 +140,7 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
     return members.stream().map(workspaceMemberMapper::toDto).toList();
   }
 
+  @Transactional
   @Override
   public WorkspaceMemberDto blockByManager(UUID workspaceMemberId) {
     log.info("workspace member blockByManager operation starts, workspaceMemberId={}", workspaceMemberId);
@@ -150,6 +153,7 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
     return workspaceMemberMapper.toDto(member);
   }
 
+  @Transactional
   @Override
   public WorkspaceMemberDto unblockByManager(UUID workspaceMemberId) {
     log.info("workspace member unblockByManager operation starts, workspaceMemberId={}", workspaceMemberId);
@@ -161,6 +165,8 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
     log.debug("workspace member unblockByManager operation completed, workspaceMemberId={}", workspaceMemberId);
     return workspaceMemberMapper.toDto(member);
   }
+
+  // ================ helpers =================
 
   private void userAndWorkspaceExists(UUID userId, UUID workspaceId) {
     checkUserExists(userId);

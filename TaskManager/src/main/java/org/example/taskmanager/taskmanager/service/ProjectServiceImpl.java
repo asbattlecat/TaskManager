@@ -74,15 +74,16 @@ public class ProjectServiceImpl implements ProjectService {
 
   // ========================== архивация/разархивация =====================
 
+  // TODO валидация пользователя
   @Transactional
   @Override
-  public ProjectDto archive(UUID projectId, ArchiveReason reason) {
-    log.info("project archive starts, projectId={}, reason={}", projectId, reason);
+  public ProjectDto archive(UUID projectId, UUID memberId) {
+    log.info("project archive starts, projectId={}", projectId);
     Project project = getProject(projectId, "archive");
 
-    project.archive(reason);
+    project.archive(ArchiveReason.USER_ACTION);
     projectRepository.save(project);
-    CascadeArchiveResult result = cascadeArchiveService.archiveByProject(projectId);
+    CascadeArchiveResult result = cascadeArchiveService.archiveByProject(projectId, memberId);
 
     log.debug("project archive completed, projectId={}, cascaded projects={}, boards={}, tasks={}",
             projectId,
@@ -93,19 +94,20 @@ public class ProjectServiceImpl implements ProjectService {
     return projectMapper.toDto(project);
   }
 
+  // TODO валидация пользователя
   @Transactional
   @Override
-  public ProjectDto unarchive(UUID projectId, UnarchiveReason reason) {
-    log.info("project unarchive starts, projectId={}, reason={}", projectId, reason);
+  public ProjectDto unarchive(UUID projectId, UUID memberId) {
+    log.info("project unarchive starts, projectId={}", projectId);
 
     Project project = getProject(projectId, "unarchive");
     Workspace parent = getParent(project.getWorkspaceId(), "unarchive");
 
     checkParentBeforeUnarchive(parent);
 
-    project.unarchive(reason);
+    project.unarchive(UnarchiveReason.USER_ACTION);
     projectRepository.save(project);
-    CascadeUnarchiveResult result = cascadeArchiveService.unarchiveByProject(projectId);
+    CascadeUnarchiveResult result = cascadeArchiveService.unarchiveByProject(projectId, memberId);
 
     log.debug("project unarchive completed, projectId={}, cascaded projects={}, boards={}, tasks={}",
             projectId,
@@ -118,7 +120,7 @@ public class ProjectServiceImpl implements ProjectService {
 
   // ========================== архивация/разархивация =====================
 
-  @Transactional
+  @Transactional(readOnly = true)
   @Override
   public List<BoardDto> getProjectBoards(UUID projectId) {
     log.info("project getProjectBoards operation starts, projectId={}", projectId);
@@ -161,6 +163,8 @@ public class ProjectServiceImpl implements ProjectService {
     log.info("project changeDescription operation completed, projectId={}, newDescription={}", projectId, newDescription);
     return projectMapper.toDto(project);
   }
+
+  // ================ helpers =================
 
   private Project getProject(UUID projectId, String operationName) {
     return projectRepository

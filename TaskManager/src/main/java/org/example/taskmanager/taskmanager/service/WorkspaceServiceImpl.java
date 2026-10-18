@@ -82,21 +82,16 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     return workspaceMapper.toDto(workspace);
   }
 
+  // TODO валидация пользователя
   @Transactional
   @Override
-  public WorkspaceDto archive(UUID workspaceId, ArchiveReason reason) {
-    log.info("workspace archive starts, workspaceId={}, reason={}", workspaceId, reason);
+  public WorkspaceDto archive(UUID workspaceId, UUID memberId) {
+    log.info("workspace archive starts, workspaceId={}", workspaceId);
     Workspace workspace = getWorkspace(workspaceId, "archive");
 
-    if (reason == ArchiveReason.PARENT_ARCHIVED) {
-      log.error("cannot archive workspace with id={}, reason is incorrect, reason={}", workspaceId, reason);;
-      throw new IllegalArgumentException("Workspace with id " + workspaceId
-              + " cannot be archived by cascade mechanics");
-    }
-
-    workspace.archive(reason);
+    workspace.archive(ArchiveReason.USER_ACTION);
     workspaceRepository.save(workspace);
-    CascadeArchiveResult result = cascadeArchiveService.archiveByWorkspace(workspaceId);
+    CascadeArchiveResult result = cascadeArchiveService.archiveByWorkspace(workspaceId, memberId);
 
     log.debug("workspace archive completed, workspaceId={}, cascaded projects={}, boards={}, tasks={}",
             workspaceId,
@@ -107,21 +102,16 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     return workspaceMapper.toDto(workspace);
   }
 
+  // TODO валидация пользователя
   @Transactional
   @Override
-  public WorkspaceDto unarchive(UUID workspaceId, UnarchiveReason reason) {
-    log.info("workspace unarchive starts, workspaceId={}, reason={}", workspaceId, reason);
+  public WorkspaceDto unarchive(UUID workspaceId, UUID memberId) {
+    log.info("workspace unarchive starts, workspaceId={}", workspaceId);
     Workspace workspace = getWorkspace(workspaceId, "unarchive");
 
-    if (reason == UnarchiveReason.CASCADE) {
-      log.error("cannot unarchive workspace with workspaceId={}, reason is incorrect, reason={}", workspaceId, reason);;
-      throw new IllegalArgumentException("Workspace with id "
-              + workspaceId + " cannot be archived by cascade mechanics");
-    }
-
-    workspace.unarchive(reason);
+    workspace.unarchive(UnarchiveReason.USER_ACTION);
     workspaceRepository.save(workspace);
-    CascadeUnarchiveResult result = cascadeArchiveService.unarchiveByWorkspace(workspaceId);
+    CascadeUnarchiveResult result = cascadeArchiveService.unarchiveByWorkspace(workspaceId, memberId);
 
     log.debug("workspace unarchive completed, workspaceId={}, cascaded projects={}, boards={}, tasks={}",
             workspaceId,
@@ -132,7 +122,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     return workspaceMapper.toDto(workspace);
   }
 
-  @Transactional
+  @Transactional(readOnly = true)
   @Override
   public List<ProjectDto> getProjects(UUID workspaceId) {
     log.info("workspace getProjects operation starts, workspaceId={}", workspaceId);

@@ -88,13 +88,13 @@ public class BoardServiceImpl implements BoardService {
 
   @Transactional
   @Override
-  public BoardDto archive(UUID boardId, ArchiveReason reason) {
-    log.info("board archive operation starts, boardId={}, reason={}", boardId, reason);
+  public BoardDto archive(UUID boardId, UUID memberId) {
+    log.info("board archive operation starts, boardId={}", boardId);
     Board board = getBoard(boardId, "archive");
 
-    board.archive(reason);
+    board.archive(ArchiveReason.USER_ACTION);
     boardRepository.save(board);
-    CascadeArchiveResult result = cascadeArchiveService.archiveByBoard(boardId);
+    CascadeArchiveResult result = cascadeArchiveService.archiveByBoard(boardId, memberId);
 
     log.debug("board archive completed, boardId={}, cascaded projects={}, boards={}, tasks={}",
             boardId,
@@ -107,16 +107,16 @@ public class BoardServiceImpl implements BoardService {
 
   @Transactional
   @Override
-  public BoardDto unarchive(UUID boardId, UnarchiveReason reason) {
-    log.info("board unarchive operation starts, boardId={}, reason={}", boardId, reason);
+  public BoardDto unarchive(UUID boardId, UUID memberId) {
+    log.info("board unarchive operation starts, boardId={}", boardId);
     Board board = getBoard(boardId, "unarchive");
 
     Project parent = getParent(board.getProjectId(), "unarchive");
     checkParentBeforeUnarchive(parent);
 
-    board.unarchive(reason);
+    board.unarchive(UnarchiveReason.USER_ACTION);
     boardRepository.save(board);
-    CascadeUnarchiveResult result = cascadeArchiveService.unarchiveByBoard(boardId);
+    CascadeUnarchiveResult result = cascadeArchiveService.unarchiveByBoard(boardId, memberId);
 
     log.debug("board unarchive completed, boardId={}, cascaded projects={}, boards={}, tasks={}",
             boardId,
@@ -127,7 +127,7 @@ public class BoardServiceImpl implements BoardService {
     return boardMapper.toDto(board);
   }
 
-  @Transactional
+  @Transactional(readOnly = true)
   @Override
   public List<TaskDto> getTasks(UUID boardId) {
     Board board = getBoard(boardId, "getTasks");
@@ -227,6 +227,8 @@ public class BoardServiceImpl implements BoardService {
             boardId, oldPosition, newPosition);
     return columns.stream().map(boardColumnMapper::toDto).toList();
   }
+
+  // ===================== helpers =====================
 
   private Board getBoard(UUID boardId, String operationName) {
     return boardRepository
