@@ -10,6 +10,7 @@ import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceRole;
 import org.example.taskmanager.taskmanager.domain.records.CascadeArchiveResult;
+import org.example.taskmanager.taskmanager.domain.records.CascadeUnarchiveResult;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEventPublisher;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.mapper.ProjectMapper;
@@ -95,8 +96,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
     workspace.archive(reason);
     workspaceRepository.save(workspace);
-
     CascadeArchiveResult result = cascadeArchiveService.archiveByWorkspace(workspaceId);
+
     log.debug("workspace archive completed, workspaceId={}, cascaded projects={}, boards={}, tasks={}",
             workspaceId,
             result.projectsArchived(),
@@ -120,10 +121,14 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
     workspace.unarchive(reason);
     workspaceRepository.save(workspace);
-    workspace.getEvents().forEach(domainEventPublisher::publish);
-    workspace.clearEvents();
+    CascadeUnarchiveResult result = cascadeArchiveService.unarchiveByWorkspace(workspaceId);
 
-    log.debug("workspace unarchive completed, id={}, reason={}", workspaceId, reason);
+    log.debug("workspace unarchive completed, workspaceId={}, cascaded projects={}, boards={}, tasks={}",
+            workspaceId,
+            result.projectsUnarchived(),
+            result.projectsUnarchived(),
+            result.projectsUnarchived()
+    );
     return workspaceMapper.toDto(workspace);
   }
 

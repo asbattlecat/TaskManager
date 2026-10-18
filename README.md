@@ -275,4 +275,12 @@ IN_PROGRESS → BLOCKED → IN_PROGRESS
 
 1. Добавление валидации входных данных на уровне доменных сущностей
     - Task
+    - Board
+    - Project
+    - Workspace
+    - дальше по усмотрению (скорее всего все сущности)
 2. Корректная настройка Spring Method Validation и соответствующая реализация Bean Validation.
+3. Добавить создание AuditEntry при каскадной архивации/разархивации
+4. Изменить фильтрацию + добавить пагинацию в TaskService
+5. Добавить пагинацию в методе getTaskChangesHistory в TaskService
+6. Подумать что делать с EventListener-ами

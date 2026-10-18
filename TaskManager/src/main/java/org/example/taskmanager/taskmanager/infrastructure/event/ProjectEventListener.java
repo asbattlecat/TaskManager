@@ -48,7 +48,7 @@ public class ProjectEventListener {
     UUID id = event.projectId();
     log.info("cascade board archiveByProject operation starts, projectId={}", id);
     try {
-      boardService.archiveByProject(event.projectId(), ArchiveReason.PARENT_ARCHIVED);
+//      boardService.archiveByProject(event.projectId(), ArchiveReason.PARENT_ARCHIVED);
       log.debug("cascade board archiveByProject operation completed, projectId={}", id);
     } catch (Exception ex) {
       log.error("cascade board archiveByProject operation failed, projectId={}", id);
@@ -77,7 +77,7 @@ public class ProjectEventListener {
     UUID id = event.projectId();
     log.info("cascade board unarchiveByProject operation starts, projectId={}", id);
     try {
-      boardService.unarchiveByProject(event.projectId(), UnarchiveReason.CASCADE);
+//      boardService.unarchiveByProject(event.projectId(), UnarchiveReason.CASCADE);
       log.debug("cascade board unarchiveByProject operation completed, projectId={}", id);
     } catch (Exception ex) {
       log.error("cascade board unarchiveByProject operation failed, projectId={}", id);

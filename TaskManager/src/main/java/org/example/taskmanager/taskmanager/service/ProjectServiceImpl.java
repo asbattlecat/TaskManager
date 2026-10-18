@@ -9,6 +9,8 @@ import org.example.taskmanager.taskmanager.domain.entity.Project;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
+import org.example.taskmanager.taskmanager.domain.records.CascadeArchiveResult;
+import org.example.taskmanager.taskmanager.domain.records.CascadeUnarchiveResult;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEventPublisher;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.mapper.BoardMapper;
@@ -16,6 +18,7 @@ import org.example.taskmanager.taskmanager.mapper.ProjectMapper;
 import org.example.taskmanager.taskmanager.repository.BoardRepository;
 import org.example.taskmanager.taskmanager.repository.ProjectRepository;
 import org.example.taskmanager.taskmanager.repository.WorkspaceRepository;
+import org.example.taskmanager.taskmanager.service.interfaces.CascadeArchiveService;
 import org.example.taskmanager.taskmanager.service.interfaces.ProjectService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +29,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 public class ProjectServiceImpl implements ProjectService {
+  private final CascadeArchiveService cascadeArchiveService;
   private final DomainEventPublisher domainEventPublisher;
   private final WorkspaceRepository  workspaceRepository;
   private final ProjectRepository projectRepository;
@@ -34,6 +38,7 @@ public class ProjectServiceImpl implements ProjectService {
   private final BoardMapper boardMapper;
 
   public ProjectServiceImpl(
+          CascadeArchiveService cascadeArchiveService,
           DomainEventPublisher domainEventPublisher,
           WorkspaceRepository workspaceRepository,
           ProjectRepository projectRepository,
@@ -41,6 +46,7 @@ public class ProjectServiceImpl implements ProjectService {
           ProjectMapper projectMapper,
           BoardMapper boardMapper
   ) {
+    this.cascadeArchiveService = cascadeArchiveService;
     this.domainEventPublisher = domainEventPublisher;
     this.workspaceRepository = workspaceRepository;
     this.projectRepository = projectRepository;
@@ -66,6 +72,8 @@ public class ProjectServiceImpl implements ProjectService {
     return projectMapper.toDto(project);
   }
 
+  // ========================== архивация/разархивация =====================
+
   @Transactional
   @Override
   public ProjectDto archive(UUID projectId, ArchiveReason reason) {
@@ -74,34 +82,15 @@ public class ProjectServiceImpl implements ProjectService {
 
     project.archive(reason);
     projectRepository.save(project);
-    project.getEvents().forEach(domainEventPublisher::publish);;
-    project.clearEvents();
+    CascadeArchiveResult result = cascadeArchiveService.archiveByProject(projectId);
 
-    log.debug("project archive completed, projectId={}, reason={}", projectId, reason);
+    log.debug("project archive completed, projectId={}, cascaded projects={}, boards={}, tasks={}",
+            projectId,
+            result.projectsArchived(),
+            result.boardsArchived(),
+            result.tasksArchived()
+    );
     return projectMapper.toDto(project);
-  }
-
-  @Transactional
-  @Override
-  public List<ProjectDto> archiveByWorkspace(UUID workspaceId, ArchiveReason reason) {
-    log.info("project archiveByWorkspace starts, workspaceId={}, reason={}", workspaceId, reason);
-
-    List<Project> projects = projectRepository
-            .findProjectsByWorkspaceIdWithPessimisticWriteLock(workspaceId);
-
-    for (Project project : projects) {
-      if (project.getArchiveState() != ArchiveState.ACTIVE) continue;
-
-      project.archive(reason);
-      projectRepository.save(project);
-      project.getEvents().forEach(domainEventPublisher::publish);;
-      project.clearEvents();
-
-      log.debug("project with id={} archived by workspace and saved in database", project.getId());
-    }
-
-    log.debug("project archiveByWorkspace completed, workspaceId={}, reason={}", workspaceId, reason);
-    return projects.stream().map(projectMapper::toDto).toList();
   }
 
   @Transactional
@@ -116,38 +105,18 @@ public class ProjectServiceImpl implements ProjectService {
 
     project.unarchive(reason);
     projectRepository.save(project);
-    project.getEvents().forEach(domainEventPublisher::publish);
-    project.clearEvents();
+    CascadeUnarchiveResult result = cascadeArchiveService.unarchiveByProject(projectId);
 
-    log.debug("project unarchive completed, projectId={}, reason={}", projectId, reason);
+    log.debug("project unarchive completed, projectId={}, cascaded projects={}, boards={}, tasks={}",
+            projectId,
+            result.projectsUnarchived(),
+            result.projectsUnarchived(),
+            result.projectsUnarchived()
+    );
     return projectMapper.toDto(project);
   }
 
-  @Transactional
-  @Override
-  public List<ProjectDto> unarchiveByWorkspace(UUID workspaceId, UnarchiveReason reason) {
-    log.info("project unarchiveByWorkspace starts, workspaceId={}, reason={}", workspaceId, reason);
-
-    Workspace parent = getParent(workspaceId, "unarchiveByWorkspace");
-    List<Project> projects = projectRepository
-            .findProjectsByWorkspaceIdWithPessimisticWriteLock(workspaceId);
-
-    checkParentBeforeUnarchive(parent);
-
-    for (Project project : projects) {
-      if (!project.canBeUnarchived(reason)) continue;
-
-      project.unarchive(reason);
-      projectRepository.save(project);
-      project.getEvents().forEach(domainEventPublisher::publish);
-      project.clearEvents();
-
-      log.debug("project with id={} unarchived by workspace and saved in database", project.getId());
-    }
-
-    log.info("project unarchiveByWorkspace completed, workspaceId={}, reason={}", workspaceId, reason);
-    return projects.stream().map(projectMapper::toDto).toList();
-  }
+  // ========================== архивация/разархивация =====================
 
   @Transactional
   @Override

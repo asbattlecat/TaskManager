@@ -48,7 +48,7 @@ public class WorkspaceEventListener {
     UUID id = event.workspaceId();
     log.info("cascade project archiveByWorkspace operation starts, workspaceId={}", id);
     try {
-      projectService.archiveByWorkspace(id, ArchiveReason.PARENT_ARCHIVED);
+//      projectService.archiveByWorkspace(id, ArchiveReason.PARENT_ARCHIVED);
       log.debug("cascade project archiveByWorkspace operation completed, workspaceId={}", id);
     } catch (Exception ex) {
       log.error("cascade project archiveByWorkspace operation failed, workspaceId={}", id);
@@ -77,7 +77,7 @@ public class WorkspaceEventListener {
     UUID id = event.workspaceId();
     log.info("cascade project unarchiveByWorkspace operation starts, workspaceId={}", id);
     try {
-      projectService.unarchiveByWorkspace(id, UnarchiveReason.CASCADE);
+//      projectService.unarchiveByWorkspace(id, UnarchiveReason.CASCADE);
       log.debug("cascade project unarchiveByWorkspace operation completed, workspaceId={}", id);
     } catch (Exception ex) {
       log.error("cascade project unarchiveByWorkspace operation failed, workspaceId={}", id);

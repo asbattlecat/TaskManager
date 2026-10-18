@@ -1,5 +1,6 @@
 package org.example.taskmanager.taskmanager.service;
 
+import jakarta.transaction.Transactional;
 import org.example.taskmanager.taskmanager.domain.enums.RootType;
 import org.example.taskmanager.taskmanager.domain.records.CascadeArchiveResult;
 import org.example.taskmanager.taskmanager.domain.records.CascadeUnarchiveResult;
@@ -33,6 +34,7 @@ public class CascadeArchiveServiceImpl implements CascadeArchiveService {
     this.taskRepository = taskRepository;
   }
 
+  @Transactional
   @Override
   public CascadeArchiveResult archiveByWorkspace(UUID workspaceId) {
     requireWorkspaceExists(workspaceId, "archiveByWorkspace");
@@ -53,6 +55,7 @@ public class CascadeArchiveServiceImpl implements CascadeArchiveService {
     );
   }
 
+  @Transactional
   @Override
   public CascadeArchiveResult archiveByProject(UUID projectId) {
     requireProjectExists(projectId, "archiveByProject");
@@ -72,6 +75,7 @@ public class CascadeArchiveServiceImpl implements CascadeArchiveService {
     );
   }
 
+  @Transactional
   @Override
   public CascadeArchiveResult archiveByBoard(UUID boardId) {
     requireBoardExists(boardId, "archiveByBoard");
@@ -90,6 +94,7 @@ public class CascadeArchiveServiceImpl implements CascadeArchiveService {
     );
   }
 
+  @Transactional
   @Override
   public CascadeUnarchiveResult unarchiveByWorkspace(UUID workspaceId) {
     requireWorkspaceExists(workspaceId, "unarchiveByWorkspace");
@@ -110,6 +115,7 @@ public class CascadeArchiveServiceImpl implements CascadeArchiveService {
     );
   }
 
+  @Transactional
   @Override
   public CascadeUnarchiveResult unarchiveByProject(UUID projectId) {
     requireProjectExists(projectId, "unarchiveByProject");
@@ -129,6 +135,7 @@ public class CascadeArchiveServiceImpl implements CascadeArchiveService {
     );
   }
 
+  @Transactional
   @Override
   public CascadeUnarchiveResult unarchiveByBoard(UUID boardId) {
     requireBoardExists(boardId, "unarchiveByBoard");

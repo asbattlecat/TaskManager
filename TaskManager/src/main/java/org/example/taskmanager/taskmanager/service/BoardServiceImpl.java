@@ -12,6 +12,8 @@ import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.BoardType;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
+import org.example.taskmanager.taskmanager.domain.records.CascadeArchiveResult;
+import org.example.taskmanager.taskmanager.domain.records.CascadeUnarchiveResult;
 import org.example.taskmanager.taskmanager.infrastructure.event.DomainEventPublisher;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.mapper.BoardColumnMapper;
@@ -22,6 +24,7 @@ import org.example.taskmanager.taskmanager.repository.BoardRepository;
 import org.example.taskmanager.taskmanager.repository.ProjectRepository;
 import org.example.taskmanager.taskmanager.repository.TaskRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.BoardService;
+import org.example.taskmanager.taskmanager.service.interfaces.CascadeArchiveService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +35,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 public class BoardServiceImpl implements BoardService {
+  private final CascadeArchiveService cascadeArchiveService;
   private final BoardColumnRepository boardColumnRepository;
   private final DomainEventPublisher  domainEventPublisher;
   private final BoardColumnMapper boardColumnMapper;
@@ -43,6 +47,7 @@ public class BoardServiceImpl implements BoardService {
 
 
   public  BoardServiceImpl(
+          CascadeArchiveService cascadeArchiveService,
           BoardColumnRepository boardColumnRepository,
           DomainEventPublisher domainEventPublisher,
           ProjectRepository projectRepository,
@@ -52,6 +57,7 @@ public class BoardServiceImpl implements BoardService {
           BoardMapper boardMapper,
           TaskMapper taskMapper
   ) {
+    this.cascadeArchiveService = cascadeArchiveService;
     this.boardColumnRepository = boardColumnRepository;
     this.domainEventPublisher = domainEventPublisher;
     this.projectRepository = projectRepository;
@@ -88,33 +94,15 @@ public class BoardServiceImpl implements BoardService {
 
     board.archive(reason);
     boardRepository.save(board);
-    board.getEvents().forEach(domainEventPublisher::publish);
-    board.clearEvents();
+    CascadeArchiveResult result = cascadeArchiveService.archiveByBoard(boardId);
 
-    log.debug("board archive operation completed, boardId={}, reason={}", boardId, reason);
+    log.debug("board archive completed, boardId={}, cascaded projects={}, boards={}, tasks={}",
+            boardId,
+            result.projectsArchived(),
+            result.boardsArchived(),
+            result.tasksArchived()
+    );
     return boardMapper.toDto(board);
-  }
-
-  @Transactional
-  @Override
-  public List<BoardDto> archiveByProject(UUID projectId, ArchiveReason reason) {
-    log.info("board archiveByProject operation starts, projectId={}, reason={}", projectId, reason);
-
-    List<Board> boards = boardRepository
-            .findBoardsByProjectIdWithPessimisticWriteLock(projectId);
-
-    for (Board board : boards) {
-      if (board.getArchiveState() != ArchiveState.ACTIVE) continue;
-
-      board.archive(reason);
-      boardRepository.save(board);
-      board.getEvents().forEach(domainEventPublisher::publish);
-      board.clearEvents();
-      log.debug("board with id={} archived by project and saved in database", board.getId());
-    }
-
-    log.debug("board archiveByProject operation completed, projectId={}, reason={}", projectId, reason);
-    return boards.stream().map(boardMapper::toDto).toList();
   }
 
   @Transactional
@@ -128,36 +116,15 @@ public class BoardServiceImpl implements BoardService {
 
     board.unarchive(reason);
     boardRepository.save(board);
-    board.getEvents().forEach(domainEventPublisher::publish);
-    board.clearEvents();
+    CascadeUnarchiveResult result = cascadeArchiveService.unarchiveByBoard(boardId);
 
-    log.debug("board unarchive operation completed, boardId={}, reason={}", boardId, reason);
+    log.debug("board unarchive completed, boardId={}, cascaded projects={}, boards={}, tasks={}",
+            boardId,
+            result.projectsUnarchived(),
+            result.projectsUnarchived(),
+            result.projectsUnarchived()
+    );
     return boardMapper.toDto(board);
-  }
-
-  @Transactional
-  @Override
-  public List<BoardDto> unarchiveByProject(UUID projectId, UnarchiveReason reason) {
-    log.info("board unarchiveByProject operation starts, projectId={}, reason={}", projectId, reason);
-    List<Board> boards = boardRepository
-            .findBoardsByProjectIdWithPessimisticWriteLock(projectId);
-
-    Project parent = getParent(projectId, "unarchiveByProject");
-    checkParentBeforeUnarchive(parent);
-
-    for (Board board : boards) {
-      if (!board.canBeUnarchived(reason)) continue;
-
-      board.unarchive(reason);
-      boardRepository.save(board);
-      board.getEvents().forEach(domainEventPublisher::publish);
-      board.clearEvents();
-
-      log.debug("board with id={} unarchived by project and saved in database", board.getId());
-    }
-
-    log.debug("board unarchiveByProject operation completed, projectId={}, reason={}", projectId, reason);
-    return boards.stream().map(boardMapper::toDto).toList();
   }
 
   @Transactional

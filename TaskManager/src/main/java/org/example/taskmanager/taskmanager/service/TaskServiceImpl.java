@@ -145,47 +145,6 @@ public class TaskServiceImpl implements TaskService {
 
   @Transactional
   @Override
-  public void archiveByBoard(
-          @NotNull UUID boardId,
-          @NotNull ArchiveReason reason
-  ) {
-    log.info("task archiveByBoard starts, boardId={}, reason={}", boardId, reason);
-    if (reason != ArchiveReason.PARENT_ARCHIVED) {
-      throw new IllegalArgumentException("Cannot archiveByBoard, reason is incorrect, reason=" + reason);
-    }
-    if (!boardAccessPort.exists(boardId)) {
-      throw new NotFoundException("Board with boardId=" + boardId
-              + " not found during archiveByBoard operation");
-    }
-    // проверка end
-
-    List<Task> tasks = taskRepository
-            .findTasksByBoardIdWithPessimisticWriteLock(boardId);
-
-    for (Task task : tasks) {
-      if (task.getArchiveState() != ArchiveState.ACTIVE) continue;
-
-      ArchiveState oldValue = task.getArchiveState();
-      task.archive(reason);
-      taskRepository.save(task);
-
-      auditEntityService.create(
-              task.getId(),
-              null,
-              "archiveState",
-              String.valueOf(oldValue),
-              String.valueOf(task.getArchiveState())
-      );
-      publish(task);
-
-      log.debug("task with id={} archived by project and saved in database", task.getId());
-    }
-
-    log.debug("TaskService archiveByBoard completed, boardId={}, reason={}", boardId, reason);
-  }
-
-  @Transactional
-  @Override
   public TaskDto unarchive(
           @NotNull UUID taskId,
           @NotNull UUID memberId
@@ -209,43 +168,6 @@ public class TaskServiceImpl implements TaskService {
 
     log.debug("TaskService unarchive completed, taskId={}", taskId);
     return taskMapper.toDto(task);
-  }
-
-  @Transactional
-  @Override
-  public void unarchiveByBoard(
-          @NotNull UUID boardId,
-          @NotNull UnarchiveReason reason
-  ) {
-    log.info("task unarchiveByBoard starts, boardId={}, reason={}", boardId, reason);
-    if (reason != UnarchiveReason.CASCADE) {
-      throw new IllegalArgumentException("Cannot unarchiveByBoard, reason is incorrect, reason=" + reason);
-    }
-    boardAccessPort.requireActive(boardId, "unarchiveByBoard");
-
-    List<Task> tasks = taskRepository
-            .findTasksByBoardIdWithPessimisticWriteLock(boardId);
-
-    for (Task task : tasks) {
-      if (!task.canBeUnarchived(reason)) continue;
-      ArchiveState oldValue = task.getArchiveState();
-
-      task.unarchive(reason);
-      taskRepository.save(task);
-
-      auditEntityService.create(
-              task.getId(),
-              null,
-              "archiveState",
-              String.valueOf(oldValue),
-              String.valueOf(task.getArchiveState())
-      );
-      publish(task);
-
-      log.debug("task with id={} unarchived by board and saved in database", task.getId());
-    }
-
-    log.debug("TaskService unarchiveByBoard completed, boardId={}, reason={}", boardId, reason);
   }
 
   // ============================= архивация/разархивация ==============================
