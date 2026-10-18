@@ -95,6 +95,11 @@ public class BoardAccessAdapter implements BoardAccessPort {
     }
   }
 
+  @Override
+  public void validateTaskCreation(UUID boardId, UUID columnId) {
+
+  }
+
   // ====== helpers =======
 
   private Board getBoard(UUID boardId) {

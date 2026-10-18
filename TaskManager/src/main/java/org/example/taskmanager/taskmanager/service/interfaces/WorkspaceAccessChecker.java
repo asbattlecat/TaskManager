@@ -14,6 +14,7 @@ public interface WorkspaceAccessChecker {
   /**
    * Проверка прав доступа указанного WorkspaceMember к Workspace по boardId,
    * проверка пользователя на статус (должен быть активен)
+   * Параллельно проверяется, что Board/Project активны.
    * @param boardId ID of Board (UUID)
    * @param workspaceMemberId ID of WorkspaceMember (UUID)
    */
@@ -22,6 +23,7 @@ public interface WorkspaceAccessChecker {
    * Проверка прав доступа двоих указанных WorkspaceMember к Workspace по boardId,
    * проверка пользователя на статус (должен быть активен). Этот метод был
    * добавлен во благо уменьшения количества запросов к бд.
+   * Параллельно проверяется, что Board/Project активны.
    * @param boardId ID of Board (UUID)
    * @param firstId ID of first WorkspaceMember (UUID)
    * @param secondId ID of second WorkspaceMember (uUID)

@@ -1,6 +1,7 @@
 package org.example.taskmanager.taskmanager.domain.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,14 +11,15 @@ import org.example.taskmanager.taskmanager.domain.event.TaskUnarchivedEvent;
 import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
 import org.example.taskmanager.taskmanager.domain.enums.*;
 import org.example.taskmanager.taskmanager.infrastructure.exception.AlreadyExistsException;
+import org.springframework.validation.annotation.Validated;
 
 import java.time.Instant;
 import java.util.*;
 
 @Getter
 @NoArgsConstructor
-@Entity(name = "task")
 @Slf4j
+@Validated
 public class Task extends AggregateRoot {
   @Id
   private UUID id;
@@ -81,9 +83,12 @@ public class Task extends AggregateRoot {
   )
   private Set<Tag> tags = new HashSet<>();
 
-  public Task(@NotNull UUID boardId, UUID columnId, @NotNull String name, String description,
+  public Task(@NotNull UUID boardId, UUID columnId, @NotBlank String name, String description,
               @NotNull TaskStatus status, @NotNull TaskPriority priority, UUID assigneeId,
               @NotNull UUID creatorId, Instant deadline) {
+    if (status != TaskStatus.TODO) {
+      throw new IllegalArgumentException("Cannot create task with status " + status + ", must be TO_DO");
+    }
     id = UUID.randomUUID();
 
     archiveState = ArchiveState.ACTIVE;
@@ -171,7 +176,7 @@ public class Task extends AggregateRoot {
     log.debug("task changeColumnId completed, id={}, old={}, new={}", id, old, newColumnId);
   }
 
-  public void changeName(String newName) {
+  public void changeName(@NotBlank String newName) {
     if (Objects.equals(name, newName)) return;
     checkIsActive("changeName");
 
@@ -265,7 +270,7 @@ public class Task extends AggregateRoot {
     return tag;
   }
 
-  public void checkIsActive(String operationName) {
+  private void checkIsActive(String operationName) {
     if (archiveState != ArchiveState.ACTIVE)
       throw new IllegalStateException("Cannot do " + operationName + ", task is archived, id=" + id);
   }

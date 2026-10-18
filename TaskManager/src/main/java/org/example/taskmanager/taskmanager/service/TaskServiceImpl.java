@@ -65,26 +65,20 @@ public class TaskServiceImpl implements TaskService {
 
   @Transactional
   @Override
-  public TaskDto create(@NotNull UUID boardId, UUID columnId, @NotBlank  String name, String description,
-                        @NotNull TaskStatus status, @NotNull TaskPriority priority, UUID assigneeMemberId,
-                        @NotNull UUID creatorMemberId, Instant deadline) {
-    log.info("creating task, boardId={}, columnId={}, name={}, description={}, status={}," +
-                    " priority={}, assigneeMemberId={}, creatorMemberId={}, deadline={}",
-            boardId, columnId, name, description, status,
-            priority, assigneeMemberId, creatorMemberId, deadline);
-    // board должен быть активным
-    boardAccessPort.requireActive(boardId, "task create");
+  public TaskDto create(
+          @NotNull UUID boardId,
+          UUID columnId,
+          @NotBlank String name,
+          String description,
+          @NotNull TaskPriority priority,
+          UUID assigneeMemberId,
+          @NotNull UUID creatorMemberId,
+          Instant deadline
+  ) {
+    log.info("creating task, boardId={}, name={}, priority={}, creatorMemberId={}",
+            boardId, name, priority, creatorMemberId);
 
-    // значит это kanban доска
-    if (columnId != null) {
-      if (!boardAccessPort.isBoardKanban(boardId)) {
-        throw new IllegalArgumentException("Board type with id=" + boardId
-                + " is not kanban, cannot create task as part of column with id=" + columnId);
-      }
-      // проверяем, что указанная колонка является частью board
-      boardAccessPort.requireColumnOfBoard(boardId, columnId);
-    }
-
+    // ==================== проверка входных данных =================
     if (assigneeMemberId != null) {
       // проверяем, что у создателя и выполняющего есть доступ к этому workspace (он member)
       // если создатель и выполняющий один и тот же - то можно оптимизировать за счет сокращения
@@ -98,8 +92,19 @@ public class TaskServiceImpl implements TaskService {
       // тут уже просто чек на то, что creator - member этого workspace
       workspaceAccessChecker.check(boardId, creatorMemberId);
     }
+    // значит это kanban доска
+    boolean isKanban = boardAccessPort.isBoardKanban(boardId);
+    if (isKanban) {
+      if (columnId == null) {
+        throw new IllegalArgumentException("columnId is required for KANBAN board");
+      }
+      boardAccessPort.requireColumnOfBoard(boardId, columnId);
+    } else if (columnId != null) {
+      throw new IllegalArgumentException("columnId is not allowed for non-KANBAN board");
+    }
+    // ==================== проверка end =================
 
-    Task task = new Task(boardId, columnId, name, description, status, priority,
+    Task task = new Task(boardId, columnId, name, description, TaskStatus.TODO, priority,
             assigneeMemberId, creatorMemberId, deadline);
     taskRepository.save(task);
 
@@ -107,46 +112,53 @@ public class TaskServiceImpl implements TaskService {
     return taskMapper.toDto(task);
   }
 
+  // ============================= архивация/разархивация ==============================
+  // ============================= архивация/разархивация ==============================
+  // ============================= архивация/разархивация ==============================
+
   @Transactional
   @Override
-  public TaskDto archive(@NotNull UUID taskId, @NotNull ArchiveReason reason, @NotNull UUID memberId) {
-    log.info("task archive operation starts, taskId={}, reason={}", taskId, reason);
+  public TaskDto archive(
+          @NotNull UUID taskId,
+          @NotNull UUID memberId
+  ) {
+    log.info("task archive operation starts, taskId={}", taskId);
     Task task = getTask(taskId, "archive");
-    if (reason != ArchiveReason.USER_ACTION) {
-      throw new IllegalArgumentException("Cannot archive task by "
-              + reason + " reason, id=" + task.getId());
-    }
     workspaceAccessChecker.check(task.getBoardId(), memberId);
-    ArchiveState oldValue = task.getArchiveState();
 
-    task.archive(reason);
+    ArchiveState oldValue = task.getArchiveState();
+    task.archive(ArchiveReason.USER_ACTION);
     taskRepository.save(task);
 
     auditEntityService.create(
             taskId,
-            null,
+            memberId,
             "archiveState",
             String.valueOf(oldValue),
             String.valueOf(task.getArchiveState())
     );
+    publish(task);
 
-    task.getEvents().forEach(domainEventPublisher::publish);
-    task.clearEvents();
-
-    log.debug("TaskService archive operation completed, taskId={}, reason={}", taskId, reason);
+    log.debug("TaskService archive operation completed, taskId={}", taskId);
     return taskMapper.toDto(task);
   }
 
   @Transactional
   @Override
-  public void archiveByBoard(@NotNull UUID boardId, @NotNull ArchiveReason reason) {
+  public void archiveByBoard(
+          @NotNull UUID boardId,
+          @NotNull ArchiveReason reason
+  ) {
     log.info("task archiveByBoard starts, boardId={}, reason={}", boardId, reason);
     if (reason != ArchiveReason.PARENT_ARCHIVED) {
       throw new IllegalArgumentException("Cannot archiveByBoard, reason is incorrect, reason=" + reason);
     }
     if (!boardAccessPort.exists(boardId)) {
-      throw new NotFoundException("Board with boardId=" + boardId + " not found during archiveByBoard operation");
+      throw new NotFoundException("Board with boardId=" + boardId
+              + " not found during archiveByBoard operation");
     }
+    // проверка end
+
     List<Task> tasks = taskRepository
             .findTasksByBoardIdWithPessimisticWriteLock(boardId);
 
@@ -164,9 +176,7 @@ public class TaskServiceImpl implements TaskService {
               String.valueOf(oldValue),
               String.valueOf(task.getArchiveState())
       );
-
-      task.getEvents().forEach(domainEventPublisher::publish);
-      task.clearEvents();
+      publish(task);
 
       log.debug("task with id={} archived by project and saved in database", task.getId());
     }
@@ -176,39 +186,37 @@ public class TaskServiceImpl implements TaskService {
 
   @Transactional
   @Override
-  public TaskDto unarchive(@NotNull UUID taskId, @NotNull UnarchiveReason reason, @NotNull UUID memberId) {
-    log.info("board unarchive starts, taskId={}, reason={}", taskId, reason);
+  public TaskDto unarchive(
+          @NotNull UUID taskId,
+          @NotNull UUID memberId
+  ) {
+    log.info("board unarchive starts, taskId={}", taskId);
     Task task = getTask(taskId, "unarchive");
-    if (reason != UnarchiveReason.USER_ACTION) {
-      throw new IllegalArgumentException("Cannot unarchive task by "
-              + reason + " reason, id=" + task.getId());
-    }
     workspaceAccessChecker.check(task.getBoardId(), memberId);
 
     ArchiveState oldValue = task.getArchiveState();
-    boardAccessPort.requireActive(task.getBoardId(), "unarchive");
-
-    task.unarchive(reason);
+    task.unarchive(UnarchiveReason.USER_ACTION);
     taskRepository.save(task);
 
     auditEntityService.create(
             taskId,
-            null,
+            memberId,
             "archiveState",
             String.valueOf(oldValue),
             String.valueOf(task.getArchiveState())
     );
+    publish(task);
 
-    task.getEvents().forEach(domainEventPublisher::publish);
-    task.clearEvents();
-
-    log.debug("TaskService unarchive completed, taskId={}, reason={}", taskId, reason);
+    log.debug("TaskService unarchive completed, taskId={}", taskId);
     return taskMapper.toDto(task);
   }
 
   @Transactional
   @Override
-  public void unarchiveByBoard(@NotNull UUID boardId, @NotNull UnarchiveReason reason) {
+  public void unarchiveByBoard(
+          @NotNull UUID boardId,
+          @NotNull UnarchiveReason reason
+  ) {
     log.info("task unarchiveByBoard starts, boardId={}, reason={}", boardId, reason);
     if (reason != UnarchiveReason.CASCADE) {
       throw new IllegalArgumentException("Cannot unarchiveByBoard, reason is incorrect, reason=" + reason);
@@ -232,9 +240,7 @@ public class TaskServiceImpl implements TaskService {
               String.valueOf(oldValue),
               String.valueOf(task.getArchiveState())
       );
-
-      task.getEvents().forEach(domainEventPublisher::publish);
-      task.clearEvents();
+      publish(task);
 
       log.debug("task with id={} unarchived by board and saved in database", task.getId());
     }
@@ -242,15 +248,18 @@ public class TaskServiceImpl implements TaskService {
     log.debug("TaskService unarchiveByBoard completed, boardId={}, reason={}", boardId, reason);
   }
 
+  // ============================= архивация/разархивация ==============================
+  // ============================= архивация/разархивация ==============================
+  // ============================= архивация/разархивация ==============================
 
-  // TODO: убрать task.checkIsActive и оставить эту работу чисто на доменную сущность?
-  // TODO: убрать task.checkIsActive и оставить эту работу чисто на доменную сущность?
-  // TODO: убрать task.checkIsActive и оставить эту работу чисто на доменную сущность?
   @Transactional
   @Override
-  public TaskDto changeName(@NotNull UUID taskId, @NotNull String newName, @NotNull UUID memberId) {
+  public TaskDto changeName(
+          @NotNull UUID taskId,
+          @NotBlank String newName,
+          @NotNull UUID memberId
+  ) {
     Task task = getTask(taskId, "changeName");
-    task.checkIsActive("changeName");
     workspaceAccessChecker.check(task.getBoardId(), memberId);
 
     if (!Objects.equals(task.getName(), newName)) {
@@ -273,9 +282,12 @@ public class TaskServiceImpl implements TaskService {
 
   @Transactional
   @Override
-  public TaskDto changeDescription(@NotNull UUID taskId, @NotNull String newDescription, @NotNull UUID memberId) {
+  public TaskDto changeDescription(
+          @NotNull UUID taskId,
+          @NotNull String newDescription,
+          @NotNull UUID memberId
+  ) {
     Task task = getTask(taskId, "changeDescription");
-    task.checkIsActive("changeDescription");
     workspaceAccessChecker.check(task.getBoardId(), memberId);
 
     if (!Objects.equals(task.getDescription(), newDescription)) {
@@ -305,7 +317,6 @@ public class TaskServiceImpl implements TaskService {
           @NotNull UUID memberId
   ) {
     Task task = getTask(taskId, "changePriority");
-    task.checkIsActive("changePriority");
     workspaceAccessChecker.check(task.getBoardId(), memberId);
 
     if (!Objects.equals(task.getPriority(), newPriority)) {
@@ -335,8 +346,6 @@ public class TaskServiceImpl implements TaskService {
           @NotNull UUID memberId
   ) {
     Task task = getTask(taskId, "changeColumn");
-    // активен ли Task
-    task.checkIsActive("changeColumn");
     // WorkspaceMember с указанным memberId является участником Workspace по Task
     workspaceAccessChecker.check(task.getBoardId(), memberId);
     boardAccessPort.requireKanban(task.getBoardId(), "changeColumnId");
@@ -371,8 +380,6 @@ public class TaskServiceImpl implements TaskService {
           @NotNull UUID memberId
   ) {
     Task task = getTask(taskId, "changeDeadline");
-
-    task.checkIsActive("changeDeadline");
     workspaceAccessChecker.check(task.getBoardId(), memberId);
 
     if (!Objects.equals(task.getDeadline(), newDeadline)) {
@@ -404,8 +411,6 @@ public class TaskServiceImpl implements TaskService {
     log.info("TaskService changeStatus starts, taskId={}, newStatus={}, memberId={}",
             taskId, newStatus, memberId);
     Task task = getTask(taskId, "changeStatus");
-    task.checkIsActive("changeStatus");
-
     workspaceAccessChecker.check(task.getBoardId(), memberId);
 
     if (task.getStatus() != newStatus) {
@@ -431,15 +436,13 @@ public class TaskServiceImpl implements TaskService {
   @Override
   public TaskDto changeAssigneeId(
           @NotNull UUID taskId,
-          @NotNull UUID newAssigneeId,
+          UUID newAssigneeId,
           @NotNull UUID memberId
   ) {
     log.info("TaskService setAssignee starts, taskId={}, workspaceMemberId={}, memberId={}",
             taskId, newAssigneeId, memberId);
     Task task = getTask(taskId, "setAssignee");
-    task.checkIsActive("setAssignee");
-
-    if (Objects.equals(newAssigneeId, memberId)) {
+    if (Objects.equals(newAssigneeId, memberId) || newAssigneeId == null) {
       workspaceAccessChecker.check(task.getBoardId(), memberId);
     } else {
       workspaceAccessChecker.checkTwo(task.getBoardId(), newAssigneeId, memberId);
@@ -472,16 +475,18 @@ public class TaskServiceImpl implements TaskService {
           @NotBlank String content
   ) {
     Task task = getTask(taskId, "addComment");
-    if (workspaceMemberId == null) {
-      throw new IllegalArgumentException("Cannot add comment, workspaceMemberId is null, taskId="
-              + task.getId());
-    }
-
-    task.checkIsActive("addComment");
     workspaceAccessChecker.check(task.getBoardId(), workspaceMemberId);
 
     Comment comment = task.addComment(workspaceMemberId, content);
     taskRepository.save(task);
+
+    auditEntityService.create(
+            taskId,
+            workspaceMemberId,
+            "tags",
+            null,
+            content
+    );
 
     log.debug("TaskService addComment completed, taskId={}, workspaceMemberId={}, content={}",
             taskId, workspaceMemberId, content);
@@ -497,12 +502,18 @@ public class TaskServiceImpl implements TaskService {
           @NotNull UUID memberId
   ) {
     Task task = getTask(taskId, "addTag");
-
-    task.checkIsActive("addTag");
     workspaceAccessChecker.check(task.getBoardId(), memberId);
 
     Tag tag = task.addTag(name, color);
     taskRepository.save(task);
+
+    auditEntityService.create(
+            taskId,
+            memberId,
+            "tags",
+            null,
+            name
+    );
 
     log.debug("TaskService addTag completed, taskId={}, name={}, color={}, memberId={}",
             taskId, name, color, memberId);
@@ -540,7 +551,8 @@ public class TaskServiceImpl implements TaskService {
     return tasks.stream().map(taskMapper::toDto).toList();
   }
 
-  @Transactional
+  // TODO добавить пагинацию
+  @Transactional(readOnly = true)
   @Override
   public List<AuditEntityDto> getTaskChangesHistory(@NotNull UUID taskId, @NotNull UUID memberId) {
     Task task = getTask(taskId, "getTaskChangesHistory");
@@ -557,4 +569,8 @@ public class TaskServiceImpl implements TaskService {
                     + " not found during " + operationName + "operation"));
   }
 
+  private void publish(Task task) {
+    task.getEvents().forEach(domainEventPublisher::publish);
+    task.clearEvents();
+  }
 }

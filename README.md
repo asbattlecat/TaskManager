@@ -103,12 +103,6 @@
 ### Workspace
 OWNER / ADMIN / MEMBER
 
-### Project
-PROJECT_ADMIN / PROJECT_MEMBER
-
-### Board
-BOARD_ADMIN / BOARD_MEMBER / BOARD_VIEWER
-
 ### Правила доступа
 - Доступ к Task определяется доступом к Board → Project → Workspace
 - Пользователь не может видеть сущности вне своих workspace
@@ -117,12 +111,11 @@ BOARD_ADMIN / BOARD_MEMBER / BOARD_VIEWER
 
 ### Дополнение:
 - OWNER может назначать ADMIN
-- ADMIN может назначать PROJECT_ADMIN
-- BOARD_ADMIN может менять структуру доски
+- OWNER/ADMIN может менять структуру доски
 
 ---
 
-# 5. Workflow задач
+# 5. Workflow задач (под сомнением, пока что пропустим)
 
 ### Базовый workflow
 ```
@@ -275,3 +268,11 @@ IN_PROGRESS → BLOCKED → IN_PROGRESS
 - DDD
 - Реализация workflow
 - Проектирование API
+
+---
+
+# 15. TODO
+
+1. Добавление валидации входных данных на уровне доменных сущностей
+    - Task
+2. Корректная настройка Spring Method Validation и соответствующая реализация Bean Validation.

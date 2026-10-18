@@ -12,11 +12,25 @@ import java.util.List;
 import java.util.UUID;
 
 public interface TaskService {
-  TaskDto create(UUID boardId, UUID columnId, String name, String description, TaskStatus status,
+  TaskDto create(UUID boardId, UUID columnId, String name, String description,
                  TaskPriority priority, UUID assigneeId, UUID creatorId, Instant deadline);
-  TaskDto archive(UUID taskId, ArchiveReason archiveReason, UUID memberId);
-  void archiveByBoard(UUID boardId, ArchiveReason reason);
-  TaskDto unarchive(UUID taskId, UnarchiveReason reason, UUID memberId);
+
+  /**
+   * Архивация Task сущности. Этот метод предназначен для ручной архивации сущности
+   * (ArchiveReason == USER_ACTION)
+   * @param taskId Task ID (UUID)
+   * @param memberId WorkspaceMember ID (UUID) - тот, кто архивирует
+   * @return TaskDTO - результат работы
+   */
+  TaskDto archive(UUID taskId, UUID memberId);
+  void archiveByBoard(UUID boardId, ArchiveReason reason);  /**
+   * Разархивация Task сущности. Этот метод предназначен для ручной разархивации сущности
+   * (UnarchiveReason == USER_ACTION)
+   * @param taskId Task ID (UUID)
+   * @param memberId WorkspaceMember ID (UUID) - тот, кто архивирует
+   * @return TaskDTO - результат работы
+   */
+  TaskDto unarchive(UUID taskId, UUID memberId);
   void unarchiveByBoard(UUID boardId, UnarchiveReason reason);
   TaskDto changeName(UUID taskId, String newName, UUID memberId);
   TaskDto changeDescription(UUID taskId, String newDescription, UUID memberId);

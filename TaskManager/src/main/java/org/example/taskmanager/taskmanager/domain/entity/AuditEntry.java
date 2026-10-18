@@ -30,10 +30,10 @@ public class AuditEntry {
   @Column(nullable = false, updatable = false)
   private String fieldName;
 
-  @Column(nullable = false, updatable = false)
+  @Column(updatable = false)
   private String oldValue;
 
-  @Column(nullable = false, updatable = false)
+  @Column(updatable = false)
   private String newValue;
 
   @Column(nullable = false, updatable = false)

@@ -67,14 +67,22 @@ public class WorkspaceAccessCheckerImpl implements WorkspaceAccessChecker {
 
   private UUID getWorkspaceIdByBoard(UUID boardId) {
     Board board = getBoard(boardId);
+    requireBoardActive(board);
+    Project project = getProject(board.getProjectId());
+    requireProjectActive(project);
+    return project.getWorkspaceId();
+  }
+
+  private void requireBoardActive(Board board) {
     if (board.getArchiveState() != ArchiveState.ACTIVE) {
       throw new IllegalStateException("Board with id=" + board.getId() + " is archived");
     }
-    Project project = getProject(board.getProjectId());
+  }
+
+  private void requireProjectActive(Project project) {
     if (project.getArchiveState() != ArchiveState.ACTIVE) {
       throw new IllegalStateException("Project with id=" + project.getId() + " is archived");
     }
-    return project.getWorkspaceId();
   }
 
   private void requireMemberActive(WorkspaceMember member) {
