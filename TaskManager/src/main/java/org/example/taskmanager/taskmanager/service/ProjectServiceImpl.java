@@ -30,7 +30,6 @@ import java.util.UUID;
 @Service
 public class ProjectServiceImpl implements ProjectService {
   private final CascadeArchiveService cascadeArchiveService;
-  private final DomainEventPublisher domainEventPublisher;
   private final WorkspaceRepository  workspaceRepository;
   private final ProjectRepository projectRepository;
   private final BoardRepository boardRepository;
@@ -39,7 +38,6 @@ public class ProjectServiceImpl implements ProjectService {
 
   public ProjectServiceImpl(
           CascadeArchiveService cascadeArchiveService,
-          DomainEventPublisher domainEventPublisher,
           WorkspaceRepository workspaceRepository,
           ProjectRepository projectRepository,
           BoardRepository boardRepository,
@@ -47,7 +45,6 @@ public class ProjectServiceImpl implements ProjectService {
           BoardMapper boardMapper
   ) {
     this.cascadeArchiveService = cascadeArchiveService;
-    this.domainEventPublisher = domainEventPublisher;
     this.workspaceRepository = workspaceRepository;
     this.projectRepository = projectRepository;
     this.boardRepository = boardRepository;

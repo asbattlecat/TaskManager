@@ -1,6 +1,6 @@
 package org.example.taskmanager.taskmanager.domain.enums;
 
-public enum RootType {
+public enum RootEntityType {
   WORKSPACE,
   PROJECT,
   BOARD

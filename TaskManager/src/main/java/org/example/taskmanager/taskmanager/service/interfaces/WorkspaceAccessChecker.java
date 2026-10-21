@@ -1,6 +1,7 @@
 package org.example.taskmanager.taskmanager.service.interfaces;
 
 import org.example.taskmanager.taskmanager.domain.entity.Task;
+import org.example.taskmanager.taskmanager.domain.enums.RootEntityType;
 
 import java.util.UUID;
 
@@ -18,7 +19,7 @@ public interface WorkspaceAccessChecker {
    * @param boardId ID of Board (UUID)
    * @param workspaceMemberId ID of WorkspaceMember (UUID)
    */
-  void check(UUID boardId, UUID workspaceMemberId);
+  void check(RootEntityType rootEntityType, UUID boardId, UUID workspaceMemberId);
   /**
    * Проверка прав доступа двоих указанных WorkspaceMember к Workspace по boardId,
    * проверка пользователя на статус (должен быть активен). Этот метод был
@@ -26,7 +27,7 @@ public interface WorkspaceAccessChecker {
    * Параллельно проверяется, что Board/Project активны.
    * @param boardId ID of Board (UUID)
    * @param firstId ID of first WorkspaceMember (UUID)
-   * @param secondId ID of second WorkspaceMember (uUID)
+   * @param secondId ID of second WorkspaceMember (UUID)
    */
-  void checkTwo(UUID boardId, UUID firstId, UUID secondId);
+  void checkTwo(RootEntityType rootEntityType, UUID boardId, UUID firstId, UUID secondId);
 }

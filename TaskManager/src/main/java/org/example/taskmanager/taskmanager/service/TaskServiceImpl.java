@@ -84,13 +84,13 @@ public class TaskServiceImpl implements TaskService {
       // если создатель и выполняющий один и тот же - то можно оптимизировать за счет сокращения
       // запросов к бд
       if (Objects.equals(creatorMemberId, assigneeMemberId)) {
-        workspaceAccessChecker.check(boardId, creatorMemberId);
+        workspaceAccessChecker.check(RootEntityType.BOARD, boardId, creatorMemberId);
       } else {
-        workspaceAccessChecker.checkTwo(boardId, creatorMemberId, assigneeMemberId);
+        workspaceAccessChecker.checkTwo(RootEntityType.BOARD, boardId, creatorMemberId, assigneeMemberId);
       }
     } else {
       // тут уже просто чек на то, что creator - member этого workspace
-      workspaceAccessChecker.check(boardId, creatorMemberId);
+      workspaceAccessChecker.check(RootEntityType.BOARD, boardId, creatorMemberId);
     }
     // значит это kanban доска
     boolean isKanban = boardAccessPort.isBoardKanban(boardId);
@@ -122,7 +122,7 @@ public class TaskServiceImpl implements TaskService {
   ) {
     log.info("task archive operation starts, taskId={}", taskId);
     Task task = getTask(taskId, "archive");
-    workspaceAccessChecker.check(task.getBoardId(), memberId);
+    workspaceAccessChecker.check(RootEntityType.BOARD, task.getBoardId(), memberId);
 
     ArchiveState oldValue = task.getArchiveState();
     task.archive(ArchiveReason.USER_ACTION);
@@ -149,7 +149,7 @@ public class TaskServiceImpl implements TaskService {
   ) {
     log.info("board unarchive starts, taskId={}", taskId);
     Task task = getTask(taskId, "unarchive");
-    workspaceAccessChecker.check(task.getBoardId(), memberId);
+    workspaceAccessChecker.check(RootEntityType.BOARD, task.getBoardId(), memberId);
 
     ArchiveState oldValue = task.getArchiveState();
     task.unarchive(UnarchiveReason.USER_ACTION);
@@ -178,7 +178,7 @@ public class TaskServiceImpl implements TaskService {
           @NotNull UUID memberId
   ) {
     Task task = getTask(taskId, "changeName");
-    workspaceAccessChecker.check(task.getBoardId(), memberId);
+    workspaceAccessChecker.check(RootEntityType.BOARD, task.getBoardId(), memberId);
 
     if (!Objects.equals(task.getName(), newName)) {
       String old = task.getName();
@@ -206,7 +206,7 @@ public class TaskServiceImpl implements TaskService {
           @NotNull UUID memberId
   ) {
     Task task = getTask(taskId, "changeDescription");
-    workspaceAccessChecker.check(task.getBoardId(), memberId);
+    workspaceAccessChecker.check(RootEntityType.BOARD, task.getBoardId(), memberId);
 
     if (!Objects.equals(task.getDescription(), newDescription)) {
       String old = task.getDescription();
@@ -235,7 +235,7 @@ public class TaskServiceImpl implements TaskService {
           @NotNull UUID memberId
   ) {
     Task task = getTask(taskId, "changePriority");
-    workspaceAccessChecker.check(task.getBoardId(), memberId);
+    workspaceAccessChecker.check(RootEntityType.BOARD, task.getBoardId(), memberId);
 
     if (!Objects.equals(task.getPriority(), newPriority)) {
       TaskPriority old = task.getPriority();
@@ -265,7 +265,7 @@ public class TaskServiceImpl implements TaskService {
   ) {
     Task task = getTask(taskId, "changeColumn");
     // WorkspaceMember с указанным memberId является участником Workspace по Task
-    workspaceAccessChecker.check(task.getBoardId(), memberId);
+    workspaceAccessChecker.check(RootEntityType.BOARD, task.getBoardId(), memberId);
     boardAccessPort.requireKanban(task.getBoardId(), "changeColumnId");
 
     if (!Objects.equals(task.getColumnId(), newColumnId)) {
@@ -298,7 +298,7 @@ public class TaskServiceImpl implements TaskService {
           @NotNull UUID memberId
   ) {
     Task task = getTask(taskId, "changeDeadline");
-    workspaceAccessChecker.check(task.getBoardId(), memberId);
+    workspaceAccessChecker.check(RootEntityType.BOARD, task.getBoardId(), memberId);
 
     if (!Objects.equals(task.getDeadline(), newDeadline)) {
       Instant old = task.getDeadline();
@@ -329,7 +329,7 @@ public class TaskServiceImpl implements TaskService {
     log.info("TaskService changeStatus starts, taskId={}, newStatus={}, memberId={}",
             taskId, newStatus, memberId);
     Task task = getTask(taskId, "changeStatus");
-    workspaceAccessChecker.check(task.getBoardId(), memberId);
+    workspaceAccessChecker.check(RootEntityType.BOARD, task.getBoardId(), memberId);
 
     if (task.getStatus() != newStatus) {
       TaskStatus old = task.getStatus();
@@ -361,9 +361,9 @@ public class TaskServiceImpl implements TaskService {
             taskId, newAssigneeId, memberId);
     Task task = getTask(taskId, "setAssignee");
     if (Objects.equals(newAssigneeId, memberId) || newAssigneeId == null) {
-      workspaceAccessChecker.check(task.getBoardId(), memberId);
+      workspaceAccessChecker.check(RootEntityType.BOARD, task.getBoardId(), memberId);
     } else {
-      workspaceAccessChecker.checkTwo(task.getBoardId(), newAssigneeId, memberId);
+      workspaceAccessChecker.checkTwo(RootEntityType.BOARD, task.getBoardId(), newAssigneeId, memberId);
     }
 
     if (!Objects.equals(task.getAssigneeId(), newAssigneeId)) {
@@ -393,7 +393,7 @@ public class TaskServiceImpl implements TaskService {
           @NotBlank String content
   ) {
     Task task = getTask(taskId, "addComment");
-    workspaceAccessChecker.check(task.getBoardId(), workspaceMemberId);
+    workspaceAccessChecker.check(RootEntityType.BOARD, task.getBoardId(), workspaceMemberId);
 
     Comment comment = task.addComment(workspaceMemberId, content);
     taskRepository.save(task);
@@ -420,7 +420,7 @@ public class TaskServiceImpl implements TaskService {
           @NotNull UUID memberId
   ) {
     Task task = getTask(taskId, "addTag");
-    workspaceAccessChecker.check(task.getBoardId(), memberId);
+    workspaceAccessChecker.check(RootEntityType.BOARD, task.getBoardId(), memberId);
 
     Tag tag = task.addTag(name, color);
     taskRepository.save(task);
@@ -450,9 +450,9 @@ public class TaskServiceImpl implements TaskService {
           @NotNull UUID workspaceMemberId
   ) {
     if (assigneeId != null) {
-      workspaceAccessChecker.checkTwo(boardId, workspaceMemberId, assigneeId);
+      workspaceAccessChecker.checkTwo(RootEntityType.BOARD, boardId, workspaceMemberId, assigneeId);
     } else {
-      workspaceAccessChecker.check(boardId, workspaceMemberId);
+      workspaceAccessChecker.check(RootEntityType.BOARD, boardId, workspaceMemberId);
     }
 
     Specification<Task> spec = Specification.unrestricted();
@@ -474,7 +474,7 @@ public class TaskServiceImpl implements TaskService {
   @Override
   public List<AuditEntityDto> getTaskChangesHistory(@NotNull UUID taskId, @NotNull UUID memberId) {
     Task task = getTask(taskId, "getTaskChangesHistory");
-    workspaceAccessChecker.check(task.getBoardId(), memberId);
+    workspaceAccessChecker.check(RootEntityType.BOARD, task.getBoardId(), memberId);
     return auditEntityService.getTaskChangesHistory(taskId);
   }
 

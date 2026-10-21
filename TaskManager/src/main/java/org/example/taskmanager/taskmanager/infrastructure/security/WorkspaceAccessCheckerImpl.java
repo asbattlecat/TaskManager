@@ -4,6 +4,7 @@ import org.example.taskmanager.taskmanager.domain.entity.Board;
 import org.example.taskmanager.taskmanager.domain.entity.Project;
 import org.example.taskmanager.taskmanager.domain.entity.WorkspaceMember;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
+import org.example.taskmanager.taskmanager.domain.enums.RootEntityType;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceMemberState;
 import org.example.taskmanager.taskmanager.infrastructure.exception.AccessDeniedException;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+
+// TODO: может, при любом исключительном случае кидать AccessDeniedException?
 @Service
 public class WorkspaceAccessCheckerImpl implements WorkspaceAccessChecker {
   private final BoardRepository boardRepository;
@@ -29,16 +32,15 @@ public class WorkspaceAccessCheckerImpl implements WorkspaceAccessChecker {
     this.workspaceMemberRepository = workspaceMemberRepository;
   }
 
-
   /**
    * Проверка прав доступа указанного WorkspaceMember к Workspace по boardId,
    * проверка пользователя на статус (должен быть активен)
-   * @param boardId ID of Board (UUID)
+   * @param rootEntityId ID of RootEntity (UUID)
    * @param workspaceMemberId ID of WorkspaceMember (UUID)
    */
   @Override
-  public void check(UUID boardId, UUID workspaceMemberId) {
-    UUID workspaceId = getWorkspaceIdByBoard(boardId);
+  public void check(RootEntityType rootEntityType, UUID rootEntityId, UUID workspaceMemberId) {
+    UUID workspaceId = getWorkspaceId(rootEntityId, rootEntityType);
     WorkspaceMember member = getMember(workspaceMemberId);
     requireMemberActive(member);
     requireMemberPartOfWorkspace(member, workspaceId);
@@ -48,15 +50,15 @@ public class WorkspaceAccessCheckerImpl implements WorkspaceAccessChecker {
    * Проверка прав доступа двоих указанных WorkspaceMember к Workspace по boardId,
    * проверка пользователя на статус (должен быть активен). Этот метод был
    * добавлен во благо уменьшения количества запросов к бд.
-   * @param boardId ID of Board (UUID)
-   * @param firstId ID of first WorkspaceMember (UUID)
-   * @param secondId ID of second WorkspaceMember (uUID)
+   * @param rootEntityId ID of RootEntity (UUID)
+   * @param firstMemberId ID of first WorkspaceMember (UUID)
+   * @param secondMemberId ID of second WorkspaceMember (uUID)
    */
   @Override
-  public void checkTwo(UUID boardId, UUID firstId, UUID secondId) {
-    UUID workspaceId = getWorkspaceIdByBoard(boardId);
-    WorkspaceMember first = getMember(firstId);
-    WorkspaceMember second = getMember(secondId);
+  public void checkTwo(RootEntityType rootEntityType, UUID rootEntityId, UUID firstMemberId, UUID secondMemberId) {
+    UUID workspaceId = getWorkspaceId(rootEntityId, rootEntityType);
+    WorkspaceMember first = getMember(firstMemberId);
+    WorkspaceMember second = getMember(secondMemberId);
     requireMemberActive(first);
     requireMemberActive(second);
     requireMemberPartOfWorkspace(first, workspaceId);
@@ -65,11 +67,41 @@ public class WorkspaceAccessCheckerImpl implements WorkspaceAccessChecker {
 
   // ========== helpers ===============
 
+  private UUID getWorkspaceId(UUID rootEntityId, RootEntityType rootEntityType) {
+    UUID workspaceId = null;
+    if (rootEntityType == RootEntityType.BOARD) {
+      workspaceId = getWorkspaceIdByBoard(rootEntityId);
+    } else if (rootEntityType == RootEntityType.PROJECT) {
+      workspaceId = getWorkspaceIdByProject(rootEntityId);
+    } else if (rootEntityType == RootEntityType.WORKSPACE) {
+      workspaceId = rootEntityId;
+    }
+    return workspaceId;
+  }
+
+  private Board getBoard(UUID boardId) {
+    Board board = boardRepository.findById(boardId)
+            .orElseThrow(() -> new NotFoundException("Board not found, id=" + boardId));
+    requireBoardActive(board);
+    return board;
+  }
+
+  private Project getProject(UUID projectId) {
+    Project project = projectRepository.findById(projectId)
+            .orElseThrow(() -> new NotFoundException("Project not found, id=" + projectId));
+    requireProjectActive(project);
+
+    return project;
+  }
+
   private UUID getWorkspaceIdByBoard(UUID boardId) {
     Board board = getBoard(boardId);
-    requireBoardActive(board);
     Project project = getProject(board.getProjectId());
-    requireProjectActive(project);
+    return project.getWorkspaceId();
+  }
+
+  private UUID getWorkspaceIdByProject(UUID projectId) {
+    Project project = getProject(projectId);
     return project.getWorkspaceId();
   }
 
@@ -96,16 +128,6 @@ public class WorkspaceAccessCheckerImpl implements WorkspaceAccessChecker {
     if (!member.getWorkspaceId().equals(workspaceId)) {
       throw new AccessDeniedException("Workspace member is not part of this workspace");
     }
-  }
-
-  private Board getBoard(UUID boardId) {
-    return boardRepository.findById(boardId)
-            .orElseThrow(() -> new NotFoundException("Board not found, id=" + boardId));
-  }
-
-  private Project getProject(UUID projectId) {
-    return projectRepository.findById(projectId)
-            .orElseThrow(() -> new NotFoundException("Project not found, id=" + projectId));
   }
 
 

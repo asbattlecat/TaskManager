@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.util.*;
 
 @Getter
+@Entity
 @NoArgsConstructor
 @Slf4j
 @Validated

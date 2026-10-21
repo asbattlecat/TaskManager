@@ -1,13 +1,13 @@
 package org.example.taskmanager.taskmanager.domain.records;
 
-import org.example.taskmanager.taskmanager.domain.enums.RootType;
+import org.example.taskmanager.taskmanager.domain.enums.RootEntityType;
 
 import java.util.List;
 import java.util.UUID;
 
 public record CascadeArchiveResult(
         UUID rootId,
-        RootType rootType,
+        RootEntityType rootEntityType,
         int projectsArchived,
         int boardsArchived,
         int tasksArchived,
@@ -15,10 +15,10 @@ public record CascadeArchiveResult(
         List<UUID> boardIds,
         List<UUID> taskIds
 ) {
-  public static CascadeArchiveResult empty(UUID rootId, RootType rootType) {
+  public static CascadeArchiveResult empty(UUID rootId, RootEntityType rootEntityType) {
     return new CascadeArchiveResult(
             rootId,
-            rootType,
+            rootEntityType,
             0,
             0,
             0,

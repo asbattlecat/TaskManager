@@ -16,7 +16,8 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
   @Query(value = """
       UPDATE task
       SET archive_state = 'PARENT_ARCHIVED',
-          updated_at = CURRENT_TIMESTAMP
+          updated_at = CURRENT_TIMESTAMP,
+          version = version + 1
       WHERE board_id IN (
           SELECT b.id
           FROM board AS b
@@ -32,7 +33,8 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
   @Query(value = """
       UPDATE task
       SET archive_state = 'PARENT_ARCHIVED',
-          updated_at = CURRENT_TIMESTAMP
+          updated_at = CURRENT_TIMESTAMP,
+          version = version + 1
       WHERE board_id IN (
           SELECT id
           FROM board
@@ -47,7 +49,8 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
   @Query(value = """
       UPDATE task
       SET archive_state = 'PARENT_ARCHIVED',
-          updated_at = CURRENT_TIMESTAMP
+          updated_at = CURRENT_TIMESTAMP,
+          version = version + 1
       WHERE board_id = :boardId
           AND archive_state = 'ACTIVE'
       RETURNING id
@@ -60,7 +63,8 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
   @Query(value = """
       UPDATE task AS t
       SET archive_state = 'ACTIVE',
-          updated_at = CURRENT_TIMESTAMP
+          updated_at = CURRENT_TIMESTAMP,
+          version = version + 1
       FROM board AS b
       JOIN project AS p ON p.id = b.project_id
       WHERE t.board_id = b.id
@@ -75,7 +79,8 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
   @Query(value = """
       UPDATE task AS t
       SET archive_state = 'ACTIVE',
-          updated_at = CURRENT_TIMESTAMP
+          updated_at = CURRENT_TIMESTAMP,
+          version = version + 1
       FROM board AS b
       WHERE t.board_id = b.id
           AND b.project_id = :projectId
@@ -89,7 +94,8 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
   @Query(value = """
       UPDATE task
       SET archive_state = 'ACTIVE',
-          updated_at = CURRENT_TIMESTAMP
+          updated_at = CURRENT_TIMESTAMP,
+          version = version + 1
       WHERE board_id = :boardId
           AND archive_state = 'PARENT_ARCHIVED'
       RETURNING id

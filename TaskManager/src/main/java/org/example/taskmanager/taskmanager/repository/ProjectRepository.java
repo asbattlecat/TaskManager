@@ -20,7 +20,8 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
   @Query(value = """ 
       UPDATE project
       SET archive_state = 'PARENT_ARCHIVED',
-          updated_at = CURRENT_TIMESTAMP
+          updated_at = CURRENT_TIMESTAMP,
+          version = version + 1
       WHERE workspace_id = :workspaceId
           AND archive_state = 'ACTIVE'
       RETURNING id
@@ -33,7 +34,8 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
   @Query(value = """
       UPDATE project
       SET archive_state = 'ACTIVE',
-          updated_at = CURRENT_TIMESTAMP
+          updated_at = CURRENT_TIMESTAMP,
+          version = version + 1
       WHERE workspace_id = :workspaceId
           AND archive_state = 'PARENT_ARCHIVED'
       RETURNING id

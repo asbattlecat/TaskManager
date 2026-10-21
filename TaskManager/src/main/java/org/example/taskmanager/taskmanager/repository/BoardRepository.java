@@ -20,7 +20,8 @@ public interface BoardRepository extends JpaRepository<Board, UUID> {
   @Query(value = """
       UPDATE board
       SET archive_state = 'PARENT_ARCHIVED',
-          updated_at = CURRENT_TIMESTAMP
+          updated_at = CURRENT_TIMESTAMP,
+          version = version + 1
       WHERE project_id IN (
           SELECT id
           FROM project
@@ -35,7 +36,8 @@ public interface BoardRepository extends JpaRepository<Board, UUID> {
   @Query(value = """
       UPDATE board
       SET archive_state = 'PARENT_ARCHIVED',
-          updated_at = CURRENT_TIMESTAMP
+          updated_at = CURRENT_TIMESTAMP,
+          version = version + 1
       WHERE project_id = :projectId
           AND archive_state = 'ACTIVE'
       RETURNING id
@@ -48,7 +50,8 @@ public interface BoardRepository extends JpaRepository<Board, UUID> {
   @Query(value = """
       UPDATE board AS b
       SET archive_state = 'ACTIVE',
-          updated_at = CURRENT_TIMESTAMP
+          updated_at = CURRENT_TIMESTAMP,
+          version = version + 1
       FROM project AS p
       WHERE b.project_id = p.id
           AND p.workspace_id = :workspaceId
@@ -62,7 +65,8 @@ public interface BoardRepository extends JpaRepository<Board, UUID> {
   @Query(value = """
       UPDATE board
       SET archive_state = 'ACTIVE',
-          updated_at = CURRENT_TIMESTAMP
+          updated_at = CURRENT_TIMESTAMP,
+          version = version + 1
       WHERE project_id = :projectId
           AND archive_state = 'PARENT_ARCHIVED'
       RETURNING id

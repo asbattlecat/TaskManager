@@ -1,7 +1,6 @@
 package org.example.taskmanager.taskmanager.service;
 
-import jakarta.transaction.Transactional;
-import org.example.taskmanager.taskmanager.domain.enums.RootType;
+import org.example.taskmanager.taskmanager.domain.enums.RootEntityType;
 import org.example.taskmanager.taskmanager.domain.records.CascadeArchiveResult;
 import org.example.taskmanager.taskmanager.domain.records.CascadeUnarchiveResult;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
@@ -12,6 +11,7 @@ import org.example.taskmanager.taskmanager.repository.WorkspaceRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.AuditEntityService;
 import org.example.taskmanager.taskmanager.service.interfaces.CascadeArchiveService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -59,7 +59,7 @@ public class CascadeArchiveServiceImpl implements CascadeArchiveService {
 
     return new CascadeArchiveResult(
             workspaceId,
-            RootType.WORKSPACE,
+            RootEntityType.WORKSPACE,
             projectIds.size(),
             boardIds.size(),
             taskIds.size(),
@@ -89,7 +89,7 @@ public class CascadeArchiveServiceImpl implements CascadeArchiveService {
 
     return new CascadeArchiveResult(
             projectId,
-            RootType.PROJECT,
+            RootEntityType.PROJECT,
             0,
             boardIds.size(),
             taskIds.size(),
@@ -118,7 +118,7 @@ public class CascadeArchiveServiceImpl implements CascadeArchiveService {
 
     return new CascadeArchiveResult(
             boardId,
-            RootType.BOARD,
+            RootEntityType.BOARD,
             0,
             0,
             taskIds.size(),
@@ -149,7 +149,7 @@ public class CascadeArchiveServiceImpl implements CascadeArchiveService {
 
     return new CascadeUnarchiveResult(
             workspaceId,
-            RootType.WORKSPACE,
+            RootEntityType.WORKSPACE,
             projectIds.size(),
             boardIds.size(),
             taskIds.size(),
@@ -179,7 +179,7 @@ public class CascadeArchiveServiceImpl implements CascadeArchiveService {
 
     return new CascadeUnarchiveResult(
             projectId,
-            RootType.PROJECT,
+            RootEntityType.PROJECT,
             0,
             boardIds.size(),
             taskIds.size(),
@@ -208,7 +208,7 @@ public class CascadeArchiveServiceImpl implements CascadeArchiveService {
 
     return new CascadeUnarchiveResult(
             boardId,
-            RootType.BOARD,
+            RootEntityType.BOARD,
             0,
             0,
             taskIds.size(),

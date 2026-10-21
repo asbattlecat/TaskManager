@@ -11,7 +11,6 @@ import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceRole;
 import org.example.taskmanager.taskmanager.domain.records.CascadeArchiveResult;
 import org.example.taskmanager.taskmanager.domain.records.CascadeUnarchiveResult;
-import org.example.taskmanager.taskmanager.infrastructure.event.DomainEventPublisher;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.mapper.ProjectMapper;
 import org.example.taskmanager.taskmanager.mapper.WorkspaceMapper;
@@ -32,7 +31,6 @@ import java.util.UUID;
 public class WorkspaceServiceImpl implements WorkspaceService {
   private final WorkspaceMemberService workspaceMemberService;
   private final CascadeArchiveService cascadeArchiveService;
-  private final DomainEventPublisher domainEventPublisher;
   private final WorkspaceRepository workspaceRepository;
   private final ProjectRepository projectRepository;
   private final WorkspaceMapper workspaceMapper;
@@ -43,7 +41,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   public WorkspaceServiceImpl(
           WorkspaceMemberService workspaceMemberService,
           CascadeArchiveService cascadeArchiveService,
-          DomainEventPublisher domainEventPublisher,
           WorkspaceRepository workspaceRepository,
           ProjectRepository projectRepository,
           WorkspaceMapper workspaceMapper,
@@ -52,7 +49,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   ) {
     this.workspaceMemberService = workspaceMemberService;
     this.cascadeArchiveService = cascadeArchiveService;
-    this.domainEventPublisher = domainEventPublisher;
     this.workspaceRepository = workspaceRepository;
     this.projectRepository = projectRepository;
     this.workspaceMapper = workspaceMapper;
@@ -75,8 +71,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     Workspace workspace = new Workspace(name, description, ownerId);
     workspaceRepository.save(workspace);
 
-    // создателя рабочего пространства делаем админом
-    workspaceMemberService.create(workspace.getId(), ownerId, WorkspaceRole.ADMIN);
+    // создателя рабочего пространства делаем OWNER-ом
+    workspaceMemberService.create(workspace.getId(), ownerId, WorkspaceRole.OWNER);
 
     log.debug("workspace created and saved in database, workspaceId={}", workspace.getId());
     return workspaceMapper.toDto(workspace);
