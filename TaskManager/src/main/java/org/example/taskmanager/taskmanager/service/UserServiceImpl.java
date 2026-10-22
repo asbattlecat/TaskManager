@@ -60,28 +60,19 @@ public class UserServiceImpl implements UserService {
     return userMapper.toDto(user);
   }
 
-  @Transactional
   @Override
-  public UserDto updateUserInfo(UUID userId, UserDto dto) {
-    log.info("user updateUserInfo operation starts, userId={}, userName={}, userEmail={}, userActive={}",
-            userId, dto.name(), dto.email(), dto.active());
-    User user = getUser(userId);
+  public UserDto changeName(UUID userId, String newName) {
+    return null;
+  }
 
-    user.setName(dto.name());
-    user.setEmail(dto.email());
-    user.setActive(dto.active());
-
-    userRepository.save(user);
-
-    log.debug("user updateUserInfo operation completed, userId={}, userName={}, userEmail={}, userActive={}",
-            userId, dto.name(), dto.email(), dto.active());
-    return userMapper.toDto(user);
+  @Override
+  public UserDto changeEmail(UUID userId, String newEmail) {
+    return null;
   }
 
   @Transactional
   @Override
   public UserDto updatePassword(UUID userId, String oldPassword, String newPassword) {
-    log.info("user updatePassword operation starts, userId={}", userId);
     User user = getUser(userId);
 
     if (!passwordHasher.matches(oldPassword, user.getHashedPassword())) {
@@ -91,17 +82,17 @@ public class UserServiceImpl implements UserService {
 
     String hashedNewPassword = passwordHasher.encode(newPassword);
 
-    user.setHashedPassword(hashedNewPassword);
+    user.changePassword(hashedNewPassword);
     userRepository.save(user);
 
-    log.debug("user updatePassword operation completed, userId={}", userId);
+    log.debug("user updatePassword completed, userId={}", userId);
     return userMapper.toDto(user);
   }
 
   @Transactional
   @Override
   public UserDto activate(UUID userId) {
-    log.info("user activate operation starts, userId={}", userId);
+    log.info("user activate starts, userId={}", userId);
     User user = getUser(userId);
 
     user.activate();
@@ -109,14 +100,14 @@ public class UserServiceImpl implements UserService {
     user.getEvents().forEach(domainEventPublisher::publish);
     user.clearEvents();
 
-    log.debug("user activate operation completed, userId={}", userId);
+    log.debug("user activate completed, userId={}", userId);
     return userMapper.toDto(user);
   }
 
   @Transactional
   @Override
   public UserDto deactivate(UUID userId) {
-    log.info("user deactivate operation starts, userId={}", userId);
+    log.info("user deactivate starts, userId={}", userId);
     User user = getUser(userId);
 
     user.deactivate();
@@ -124,17 +115,16 @@ public class UserServiceImpl implements UserService {
     user.getEvents().forEach(domainEventPublisher::publish);
     user.clearEvents();
 
-    log.debug("user deactivate operation completed, userId={}", userId);
+    log.debug("user deactivate completed, userId={}", userId);
     return userMapper.toDto(user);
   }
 
   @Transactional
   @Override
   public UserDto delete(UUID userId) {
-    log.info("user delete operation starts, userId={}", userId);
+    log.info("user delete starts, userId={}", userId);
 
     if (workspaceMemberRepository.existsByUserIdAndRole(userId, WorkspaceRole.ADMIN)) {
-      log.error("user not deleted, he is admin in workspace, userId={}", userId);
       throw new EntityInUseException("Cannot delete user with id " + userId
               + " because this user is admin in workspace");
     }

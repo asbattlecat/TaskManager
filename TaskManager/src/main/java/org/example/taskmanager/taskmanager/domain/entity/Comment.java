@@ -1,11 +1,12 @@
 package org.example.taskmanager.taskmanager.domain.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -15,6 +16,7 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor
 @Entity
+@Validated
 public class Comment {
   @Id
   private UUID id;
@@ -23,19 +25,19 @@ public class Comment {
   @JoinColumn(name = "task_id", nullable = false, updatable = false)
   private Task task;
 
-  @Column(nullable = false)
+  @Column(nullable = false, updatable = false)
   private UUID authorId;
 
   @Column(nullable = false)
   private String content;
 
-  @Column(nullable = false)
+  @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
   @Column
-  private Instant updatedAt;
+  private Instant updatedAt = null;
 
-  public Comment(@NotNull Task task, @NotNull UUID authorId, @NotNull String content) {
+  public Comment(@NotNull Task task, @NotNull UUID authorId, @NotBlank String content) {
     id = UUID.randomUUID();
 
     this.task = task;
@@ -43,14 +45,16 @@ public class Comment {
     this.content = content;
 
     this.createdAt = Instant.now();
-    updatedAt = Instant.now();
   }
 
-  public void changeContent(String content) {
-    if (Objects.equals(this.content, content)) return;
+  public void changeContent(@NotBlank String newContent) {
+    if (Objects.equals(this.content, newContent)) return;
 
-    this.content = content;
-    updatedAt = Instant.now();
+    String old = content;
+    this.content = newContent;
+    touch();
+
+    log.debug("comment changeContent completed, id={}, old={}, new={}", id, old, newContent);
   }
 
   @Override
@@ -63,5 +67,11 @@ public class Comment {
   @Override
   public int hashCode() {
     return Objects.hashCode(id);
+  }
+
+  // =================== helpers ===============
+
+  private void touch() {
+    updatedAt = Instant.now();
   }
 }

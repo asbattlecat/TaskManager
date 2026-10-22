@@ -6,7 +6,8 @@ import java.util.UUID;
 
 public interface UserService {
   UserDto create(String name, String email, String password);
-  UserDto updateUserInfo(UUID userId, UserDto dto);
+  UserDto changeName(UUID userId, String newName);
+  UserDto changeEmail(UUID userId, String newEmail);
   UserDto updatePassword(UUID userId, String oldPassword, String newPassword);
   UserDto activate(UUID userId);
   UserDto deactivate(UUID userId);

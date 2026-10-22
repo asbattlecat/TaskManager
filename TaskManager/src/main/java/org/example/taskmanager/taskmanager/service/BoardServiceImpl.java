@@ -1,5 +1,6 @@
 package org.example.taskmanager.taskmanager.service;
 
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;

@@ -4,19 +4,22 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Immutable;
+import org.springframework.validation.annotation.Validated;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Getter
 @Entity
-@Table(name = "audit_entity")
+@Table(name = "audit_entry")
 @NoArgsConstructor
 @Immutable
+@Validated
 public class AuditEntry {
   @Id
   private UUID id;
@@ -39,8 +42,8 @@ public class AuditEntry {
   @Column(nullable = false, updatable = false)
   private Instant timestamp;
 
-  public AuditEntry(@NotNull UUID taskId, UUID userId, @NotNull String fieldName, @NotNull String oldValue,
-                    @NotNull String newValue) {
+  public AuditEntry(@NotNull UUID taskId, UUID userId, @NotBlank String fieldName, @NotBlank String oldValue,
+                    @NotBlank String newValue) {
     id = UUID.randomUUID();
 
     this.taskId = taskId;

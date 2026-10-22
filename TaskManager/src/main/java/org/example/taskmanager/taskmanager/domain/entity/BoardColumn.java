@@ -1,12 +1,15 @@
 package org.example.taskmanager.taskmanager.domain.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 
+import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -14,6 +17,7 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor
 @Entity
+@Validated
 @Table(
         name = "board_column",
         uniqueConstraints = {
@@ -30,7 +34,7 @@ public class BoardColumn {
   @Id
   private UUID id;
 
-  @Column(name = "board_id", nullable = false)
+  @Column(name = "board_id", nullable = false, updatable = false)
   private UUID boardId;
 
   @Column(nullable = false)
@@ -39,32 +43,47 @@ public class BoardColumn {
   @Column(nullable = false)
   private Integer position;
 
+  @Column(nullable = false, updatable = false)
+  private Instant createdAt;
+
+  @Column
+  private Instant updatedAt = null;
+
   @Version
   private Long version;
 
-  public BoardColumn(@NotNull UUID boardId, @NotNull String name, @NotNull Integer position) {
+  public BoardColumn(@NotNull UUID boardId, @NotBlank String name, @NotNull Integer position) {
     id = UUID.randomUUID();
 
     this.boardId = boardId;
     this.name = name;
     this.position = position;
+    this.createdAt = Instant.now();
   }
 
-  public void changeName(String newName) {
+  public void changeName(@NotBlank String newName) {
     if (Objects.equals(name, newName)) return;
 
     String old = name;
     this.name = newName;
 
+    touch();
     log.debug("BoardColumn changeName completed, id={}, old={}, new={}", id, old, newName);
   }
 
-  public void changePosition(Integer newPosition) {
+  public void changePosition(@NotNull Integer newPosition) {
     if (Objects.equals(position, newPosition)) return;
 
     Integer old = position;
     this.position = newPosition;
 
+    touch();
     log.debug("BoardColumn changePosition completed, id={}, old={}, new={}", id, old, newPosition);
+  }
+
+  // ============ helpers ===============
+
+  private void touch() {
+    this.updatedAt = Instant.now();
   }
 }

@@ -18,6 +18,7 @@ import java.util.*;
 
 @Getter
 @Entity
+@Table(name = "task")
 @NoArgsConstructor
 @Slf4j
 @Validated
@@ -59,7 +60,7 @@ public class Task extends AggregateRoot {
   @Column
   private Instant deadline;
 
-  @Column(nullable = false)
+  @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
   @Column
@@ -119,7 +120,7 @@ public class Task extends AggregateRoot {
     return Objects.hashCode(id);
   }
 
-  // =========== архивация =============
+  // =========== архивация/разархивация =============
 
   public void archive(ArchiveReason reason) {
     log.info("task archive operation starts, id={}, reason={}", id, reason);
@@ -134,7 +135,7 @@ public class Task extends AggregateRoot {
     }
 
     log.info("task archived, id={}, reason={}", id, reason);
-    registerEvent(new TaskArchivedEvent(id));
+//    registerEvent(new TaskArchivedEvent(id));
     touch();
   }
 
@@ -149,7 +150,7 @@ public class Task extends AggregateRoot {
     archiveState = ArchiveState.ACTIVE;
 
     log.info("task unarchived, id={}, reason={}", id, reason);
-    registerEvent(new TaskUnarchivedEvent(id));
+//    registerEvent(new TaskUnarchivedEvent(id));
     touch();
   }
 

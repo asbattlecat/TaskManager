@@ -1,9 +1,7 @@
 package org.example.taskmanager.taskmanager.domain.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Version;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,6 +13,7 @@ import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.BoardType;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
+import org.springframework.validation.annotation.Validated;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -23,6 +22,8 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor
 @Entity
+@Table(name = "board")
+@Validated
 @Slf4j
 public class Board extends AggregateRoot {
   @Id
@@ -52,7 +53,7 @@ public class Board extends AggregateRoot {
   @Version
   private Long version;
 
-  public Board(@NotNull UUID projectId, @NotNull String name, String description, @NotNull BoardType type) {
+  public Board(@NotNull UUID projectId, @NotBlank String name, String description, @NotNull BoardType type) {
     id = UUID.randomUUID();
 
     archiveState = ArchiveState.ACTIVE;
@@ -68,10 +69,7 @@ public class Board extends AggregateRoot {
   // ========= работа с архивацией/разархивацией =========
 
   public void archive(ArchiveReason reason) {
-    if (archiveState != ArchiveState.ACTIVE) {
-      log.error("cannot archive board, it is already archived, boardId={}", id);
-      throw new IllegalStateException("Board is already archived");
-    }
+    requireActive("archive");
 
     if (reason == ArchiveReason.USER_ACTION) {
       archiveState = ArchiveState.USER_ARCHIVED;
@@ -80,7 +78,7 @@ public class Board extends AggregateRoot {
     }
 
     log.debug("board archived, id={}", id);
-    registerEvent(new BoardArchivedEvent(id));
+//    registerEvent(new BoardArchivedEvent(id));
 
     touch();
   }
@@ -96,7 +94,7 @@ public class Board extends AggregateRoot {
     archiveState = ArchiveState.ACTIVE;
 
     log.debug("board unarchived, id={}", id);
-    registerEvent(new BoardUnarchivedEvent(id));
+//    registerEvent(new BoardUnarchivedEvent(id));
 
     touch();
   }

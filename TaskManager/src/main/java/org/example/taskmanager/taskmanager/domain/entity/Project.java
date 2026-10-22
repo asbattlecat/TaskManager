@@ -1,9 +1,7 @@
 package org.example.taskmanager.taskmanager.domain.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Version;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,6 +13,7 @@ import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
+import org.springframework.validation.annotation.Validated;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -23,7 +22,9 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor
 @Entity
+@Table(name = "project")
 @Slf4j
+@Validated
 public class Project extends AggregateRoot {
   @Id
   private UUID id;
@@ -49,7 +50,7 @@ public class Project extends AggregateRoot {
   @Version
   private Long version;
 
-  public Project(@NotNull UUID workspaceId, @NotNull String name, String description) {
+  public Project(@NotNull UUID workspaceId, @NotBlank String name, String description) {
     id = UUID.randomUUID();
 
     archiveState = ArchiveState.ACTIVE;
@@ -61,11 +62,11 @@ public class Project extends AggregateRoot {
     this.createdAt = Instant.now();
   }
 
+  // =============== архивация/разархивация ==============
+
   public void archive(@NotNull ArchiveReason reason) {
-    if (archiveState != ArchiveState.ACTIVE) {
-      log.error("cannot archive project, it is already archived, projectId={}", id);
-      throw new IllegalStateException("Project is already archived");
-    }
+    log.info("task archive starts, id={}, reason={}", id, reason);
+    requireActive("archive");
 
     if (reason == ArchiveReason.USER_ACTION) {
       archiveState = ArchiveState.USER_ARCHIVED;
@@ -73,13 +74,14 @@ public class Project extends AggregateRoot {
       archiveState = ArchiveState.PARENT_ARCHIVED;
     }
 
-    log.info("project archived, id={}", id);
-    registerEvent(new ProjectArchivedEvent(id));
+//    registerEvent(new ProjectArchivedEvent(id));
+    touch();
+    log.debug("project archived, id={}", id);
   }
 
   public void unarchive(@NotNull UnarchiveReason reason) {
+    log.info("task unarchive starts, id={}, reason={}", id, reason);
     if (archiveState == ArchiveState.ACTIVE) {
-      log.error("cannot unarchive project, it is already active, projectId={}", id);
       throw new IllegalStateException("Project is already active, cannot unarchive");
     }
 
@@ -87,8 +89,9 @@ public class Project extends AggregateRoot {
 
     archiveState = ArchiveState.ACTIVE;
 
-    log.info("project unarchived, id={}", id);
-    registerEvent(new ProjectUnarchivedEvent(id));
+//    registerEvent(new ProjectUnarchivedEvent(id));
+    touch();
+    log.debug("project unarchived, id={}", id);
   }
 
   public boolean canBeUnarchived(UnarchiveReason reason) {
@@ -102,7 +105,9 @@ public class Project extends AggregateRoot {
     };
   }
 
-  public void changeName(String newName) {
+  // =============== изменение полей ==============
+
+  public void changeName(@NotBlank String newName) {
     if (Objects.equals(name, newName)) return;
 
     requireActive("changeName");

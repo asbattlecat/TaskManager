@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Version;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,14 +16,16 @@ import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
+import org.springframework.validation.annotation.Validated;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
 @Getter
-@Setter
 @NoArgsConstructor
+@Validated
 @Slf4j
 public class Workspace extends AggregateRoot {
   @Id
@@ -40,7 +43,7 @@ public class Workspace extends AggregateRoot {
   @Column(nullable = false)
   private UUID ownerId;
 
-  @Column(nullable = false)
+  @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
   @Column
@@ -50,7 +53,7 @@ public class Workspace extends AggregateRoot {
   private Long version;
 
 
-  public Workspace(@NotNull String name, String description, @NotNull UUID ownerId) {
+  public Workspace(@NotBlank String name, String description, @NotNull UUID ownerId) {
     id =  UUID.randomUUID();
 
     archiveState = ArchiveState.ACTIVE;
@@ -62,9 +65,10 @@ public class Workspace extends AggregateRoot {
     this.createdAt = Instant.now();
   }
 
+  // ============== архивация / разархивация ================
+
   public void archive(@NotNull ArchiveReason reason) {
     if (archiveState != ArchiveState.ACTIVE) {
-      log.error("cannot archive workspace, it is already archived, workspaceId={}", id);
       throw new IllegalStateException("Workspace is already archived");
     }
 
@@ -74,12 +78,13 @@ public class Workspace extends AggregateRoot {
       archiveState = ArchiveState.PARENT_ARCHIVED;
     }
 
-    registerEvent(new WorkspaceArchivedEvent(id));
+//    registerEvent(new WorkspaceArchivedEvent(id));
+    log.debug("workspace archived, id={}", id);
   }
+
 
   public void unarchive(@NotNull UnarchiveReason reason) {
     if (archiveState == ArchiveState.ACTIVE) {
-      log.error("cannot unarchive workspace, it is already active, workspaceId={}", id);
       throw new IllegalStateException("Workspace is already active, cannot unarchive");
     }
 
@@ -87,7 +92,8 @@ public class Workspace extends AggregateRoot {
 
     archiveState = ArchiveState.ACTIVE;
 
-    registerEvent(new WorkspaceUnarchivedEvent(id));
+//    registerEvent(new WorkspaceUnarchivedEvent(id));
+    log.debug("workspace unarchived, id={}", id);
   }
 
   public boolean canBeUnarchived(UnarchiveReason reason) {
@@ -99,5 +105,51 @@ public class Workspace extends AggregateRoot {
       case ACTIVE ->
               false;
     };
+  }
+
+  // ============ изменение полей ==============
+
+  public void changeName(@NotBlank String newName) {
+    if (Objects.equals(this.name, newName)) return;
+    requireActive("changeName");
+
+    String old = this.name;
+    this.name = newName;
+    touch();
+    log.debug("workspace changeName completed, id={}, old={}, new={}", id, old, newName);
+  }
+
+  public void changeDescription(String newDescription) {
+    if (Objects.equals(this.description, newDescription)) return;
+    requireActive("changeDescription");
+
+    String old = this.description;
+    this.description = newDescription;
+    touch();
+    log.debug("workspace changeDescription completed, id={}, old={}, new={}",
+            id, old, newDescription);
+  }
+
+  public void changeOwnerId(@NotNull UUID newOwnerId) {
+    if (Objects.equals(this.ownerId, newOwnerId)) return;
+    requireActive("changeOwnerId");
+
+    UUID old = newOwnerId;
+    this.ownerId = newOwnerId;
+    touch();
+    log.debug("workspace changeOwnerId completed, id={}, old={}, new={}", id, old, newOwnerId);
+  }
+
+  // =========== helpers =============
+
+  private void requireActive(String operationName) {
+    if (archiveState != ArchiveState.ACTIVE) {
+      throw new IllegalStateException("Cannot do " + operationName
+              + ", workspace is archived, id=" + id);
+    }
+  }
+
+  private void touch() {
+    this.updatedAt = Instant.now();
   }
 }
