@@ -1,7 +1,9 @@
 package org.example.taskmanager.taskmanager.infrastructure.security;
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.domain.entity.Board;
 import org.example.taskmanager.taskmanager.domain.entity.Project;
+import org.example.taskmanager.taskmanager.domain.entity.Workspace;
 import org.example.taskmanager.taskmanager.domain.entity.WorkspaceMember;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.RootEntityType;
@@ -11,6 +13,7 @@ import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundExce
 import org.example.taskmanager.taskmanager.repository.BoardRepository;
 import org.example.taskmanager.taskmanager.repository.ProjectRepository;
 import org.example.taskmanager.taskmanager.repository.WorkspaceMemberRepository;
+import org.example.taskmanager.taskmanager.repository.WorkspaceRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceAccessChecker;
 import org.springframework.stereotype.Service;
 
@@ -18,18 +21,24 @@ import java.util.UUID;
 
 
 // TODO: может, при любом исключительном случае кидать AccessDeniedException?
+@Slf4j
 @Service
 public class WorkspaceAccessCheckerImpl implements WorkspaceAccessChecker {
-  private final BoardRepository boardRepository;
-  private final ProjectRepository projectRepository;
   private final WorkspaceMemberRepository workspaceMemberRepository;
+  private final WorkspaceRepository workspaceRepository;
+  private final ProjectRepository projectRepository;
+  private final BoardRepository boardRepository;
 
-  public  WorkspaceAccessCheckerImpl(BoardRepository boardRepository,
-                                     ProjectRepository projectRepository,
-                                     WorkspaceMemberRepository workspaceMemberRepository) {
-    this.boardRepository = boardRepository;
-    this.projectRepository = projectRepository;
+  public  WorkspaceAccessCheckerImpl(
+          WorkspaceMemberRepository workspaceMemberRepository,
+          WorkspaceRepository workspaceRepository,
+          ProjectRepository projectRepository,
+          BoardRepository boardRepository
+  ) {
     this.workspaceMemberRepository = workspaceMemberRepository;
+    this.workspaceRepository = workspaceRepository;
+    this.projectRepository = projectRepository;
+    this.boardRepository = boardRepository;
   }
 
   /**
@@ -39,11 +48,18 @@ public class WorkspaceAccessCheckerImpl implements WorkspaceAccessChecker {
    * @param workspaceMemberId ID of WorkspaceMember (UUID)
    */
   @Override
-  public void check(RootEntityType rootEntityType, UUID rootEntityId, UUID workspaceMemberId) {
-    UUID workspaceId = getWorkspaceId(rootEntityId, rootEntityType);
-    WorkspaceMember member = getMember(workspaceMemberId);
-    requireMemberActive(member);
-    requireMemberPartOfWorkspace(member, workspaceId);
+  public void check(
+          RootEntityType rootEntityType,
+          UUID rootEntityId,
+          UUID workspaceMemberId
+  ) {
+    try {
+      doCheck(rootEntityType, rootEntityId, workspaceMemberId);
+    } catch (NotFoundException | IllegalStateException e) {
+      log.warn("Access denied: memberId={}, rootEntityType={}, rootEntityId={}, reason={}",
+              workspaceMemberId, rootEntityType, rootEntityId, e.getMessage(), e);
+      throw new AccessDeniedException("Access denied", e);
+    }
   }
 
   /**
@@ -55,27 +71,64 @@ public class WorkspaceAccessCheckerImpl implements WorkspaceAccessChecker {
    * @param secondMemberId ID of second WorkspaceMember (uUID)
    */
   @Override
-  public void checkTwo(RootEntityType rootEntityType, UUID rootEntityId, UUID firstMemberId, UUID secondMemberId) {
-    UUID workspaceId = getWorkspaceId(rootEntityId, rootEntityType);
-    WorkspaceMember first = getMember(firstMemberId);
-    WorkspaceMember second = getMember(secondMemberId);
-    requireMemberActive(first);
-    requireMemberActive(second);
-    requireMemberPartOfWorkspace(first, workspaceId);
-    requireMemberPartOfWorkspace(second, workspaceId);
+  public void checkTwo(
+          RootEntityType rootEntityType,
+          UUID rootEntityId,
+          UUID firstMemberId,
+          UUID secondMemberId
+  ) {
+    try {
+      doCheckTwo(rootEntityType, rootEntityId, firstMemberId, secondMemberId);
+    } catch (NotFoundException | IllegalStateException e) {
+      log.warn("Access denied: firstMemberId={}, secondMemberId={}, rootEntityType={}, rootEntityId={}, reason={}",
+              firstMemberId, secondMemberId, rootEntityType, rootEntityId, e.getMessage(), e);
+    }
   }
+
+  // TODO не повредит ли проверка на активность внутри этих методов вызываемым методам?
+  // TODO не повредит ли проверка на активность внутри этих методов вызываемым методам?
+  // TODO не повредит ли проверка на активность внутри этих методов вызываемым методам?
+  // к примеру, методу unarchive в сервисах
+
 
   // ========== helpers ===============
 
+  private void doCheck(
+          RootEntityType rootEntityType,
+          UUID rootEntityId,
+          UUID workspaceMemberId
+  ) {
+    UUID workspaceId = getWorkspaceId(rootEntityId, rootEntityType);
+    WorkspaceMember member = getMember(workspaceMemberId);
+    requireMemberActive(member);
+    requireMemberPartOfWorkspace(member, workspaceId);
+  }
+
+  private void doCheckTwo(
+          RootEntityType rootEntityType,
+          UUID rootEntityId,
+          UUID firstMemberId,
+          UUID secondMemberId
+  ) {
+    UUID workspaceId = getWorkspaceId(rootEntityId, rootEntityType);
+    WorkspaceMember first = getMember(firstMemberId);
+    requireMemberActive(first);
+    requireMemberPartOfWorkspace(first, workspaceId);
+    WorkspaceMember second = getMember(secondMemberId);
+    requireMemberActive(second);
+    requireMemberPartOfWorkspace(second, workspaceId);
+  }
+
   private UUID getWorkspaceId(UUID rootEntityId, RootEntityType rootEntityType) {
-    UUID workspaceId = null;
+    UUID workspaceId;
     if (rootEntityType == RootEntityType.BOARD) {
       workspaceId = getWorkspaceIdByBoard(rootEntityId);
     } else if (rootEntityType == RootEntityType.PROJECT) {
       workspaceId = getWorkspaceIdByProject(rootEntityId);
-    } else if (rootEntityType == RootEntityType.WORKSPACE) {
+    } else {
       workspaceId = rootEntityId;
     }
+    requireWorkspaceActive(workspaceId);
     return workspaceId;
   }
 
@@ -105,6 +158,14 @@ public class WorkspaceAccessCheckerImpl implements WorkspaceAccessChecker {
     return project.getWorkspaceId();
   }
 
+  private void requireWorkspaceActive(UUID workspaceId) {
+    Workspace workspace = workspaceRepository.findById(workspaceId)
+            .orElseThrow(() -> new NotFoundException("Workspace not found, id=" + workspaceId));
+
+    if (workspace.getArchiveState() != ArchiveState.ACTIVE)
+      throw new IllegalStateException("Workspace with id=" + workspaceId + " is archived");
+  }
+
   private void requireBoardActive(Board board) {
     if (board.getArchiveState() != ArchiveState.ACTIVE) {
       throw new IllegalStateException("Board with id=" + board.getId() + " is archived");
@@ -119,8 +180,7 @@ public class WorkspaceAccessCheckerImpl implements WorkspaceAccessChecker {
 
   private void requireMemberActive(WorkspaceMember member) {
     if (member.getState() != WorkspaceMemberState.ACTIVE) {
-      throw new IllegalStateException("Member is not active, cannot do operations, memberId="
-              + member.getId() + ", memberState=" + member.getState());
+      throw new IllegalStateException("WorkspaceMember with id=" + member.getId() + " is archived");
     }
   }
 

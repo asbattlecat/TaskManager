@@ -63,7 +63,7 @@ public class Task extends AggregateRoot {
   private Instant createdAt;
 
   @Column
-  private Instant updatedAt;
+  private Instant updatedAt = null;
 
   @Version
   private Long version;
@@ -105,7 +105,6 @@ public class Task extends AggregateRoot {
     this.deadline = deadline;
 
     createdAt = Instant.now();
-    updatedAt = Instant.now();
   }
 
   @Override
@@ -169,7 +168,7 @@ public class Task extends AggregateRoot {
 
   public void changeColumnId(UUID newColumnId) {
     if (Objects.equals(columnId, newColumnId)) return;
-    checkIsActive("changeColumnId");
+    requireActive("changeColumnId");
 
     UUID old = columnId;
     this.columnId = newColumnId;
@@ -179,7 +178,7 @@ public class Task extends AggregateRoot {
 
   public void changeName(@NotBlank String newName) {
     if (Objects.equals(name, newName)) return;
-    checkIsActive("changeName");
+    requireActive("changeName");
 
     String old = name;
     this.name = newName;
@@ -189,7 +188,7 @@ public class Task extends AggregateRoot {
 
   public void changeDescription(String newDescription) {
     if (Objects.equals(description, newDescription)) return;
-    checkIsActive("changeDescription");
+    requireActive("changeDescription");
 
     String old = description;
     this.description = newDescription;
@@ -200,7 +199,7 @@ public class Task extends AggregateRoot {
   public void changeStatus(TaskStatus newStatus) {
     log.info("task changeStatus operation starts, id={}, newStatus={}", id, newStatus);
     if (status == newStatus) return;
-    checkIsActive("changeStatus");
+    requireActive("changeStatus");
 
     TaskStatus old = status;
     this.status = newStatus;
@@ -210,7 +209,7 @@ public class Task extends AggregateRoot {
 
   public void changePriority(TaskPriority newPriority) {
     if (priority == newPriority) return;
-    checkIsActive("changePriority");
+    requireActive("changePriority");
 
     TaskPriority old = priority;
     this.priority = newPriority;
@@ -221,7 +220,7 @@ public class Task extends AggregateRoot {
   public void changeAssigneeId(UUID newAssigneeId) {
     log.info("task changeAssigneeId operation starts, id={}, newAssigneeId={}", id, newAssigneeId);
     if(Objects.equals(assigneeId, newAssigneeId)) return;
-    checkIsActive("changeAssigneeId");
+    requireActive("changeAssigneeId");
 
     UUID old = assigneeId;
     this.assigneeId = newAssigneeId;
@@ -231,7 +230,7 @@ public class Task extends AggregateRoot {
 
   public void changeDeadline(Instant newDeadline) {
     if (Objects.equals(deadline, newDeadline)) return;
-    checkIsActive("changeDeadline");
+    requireActive("changeDeadline");
 
     Instant old = deadline;
     this.deadline = newDeadline;
@@ -240,7 +239,7 @@ public class Task extends AggregateRoot {
   }
 
   public Comment addComment(UUID authorId, String content) {
-    checkIsActive("addComment");
+    requireActive("addComment");
 
     if (authorId == null || content == null)
       throw new IllegalArgumentException("Task addComment operation: authorId or content is null");
@@ -253,7 +252,7 @@ public class Task extends AggregateRoot {
   }
 
   public Tag addTag(String name, TagColor color) {
-    checkIsActive("addTag");
+    requireActive("addTag");
 
     if (name == null || color == null)
       throw new IllegalArgumentException("Task addTag operation: name or color is null");
@@ -271,13 +270,12 @@ public class Task extends AggregateRoot {
     return tag;
   }
 
-  private void checkIsActive(String operationName) {
+  // ===================== вспомогательные методы =====================
+
+  private void requireActive(String operationName) {
     if (archiveState != ArchiveState.ACTIVE)
       throw new IllegalStateException("Cannot do " + operationName + ", task is archived, id=" + id);
   }
-
-  // ===================== вспомогательные методы =====================
-
 
   private void touch() {
     updatedAt = Instant.now();

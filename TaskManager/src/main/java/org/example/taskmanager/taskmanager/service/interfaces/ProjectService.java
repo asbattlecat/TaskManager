@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ProjectService {
-  ProjectDto create(UUID workspaceId, String name, String description);
+  ProjectDto create(UUID workspaceId, String name, String description, UUID memberId);
   ProjectDto archive(UUID projectId, UUID memberId);
   ProjectDto unarchive(UUID projectId, UUID memberId);
-  List<BoardDto> getProjectBoards(UUID projectId);
-  ProjectDto changeName(UUID projectId, String newName);
-  ProjectDto changeDescription(UUID projectId, String newDescription);
+  List<BoardDto> getProjectBoards(UUID projectId, UUID memberId);
+  ProjectDto changeName(UUID projectId, String newName, UUID memberId);
+  ProjectDto changeDescription(UUID projectId, String newDescription, UUID memberId);
 }

@@ -8,10 +8,11 @@ import org.example.taskmanager.taskmanager.domain.entity.Board;
 import org.example.taskmanager.taskmanager.domain.entity.Project;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
+import org.example.taskmanager.taskmanager.domain.enums.RootEntityType;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
+import org.example.taskmanager.taskmanager.domain.port.WorkspaceAccessPort;
 import org.example.taskmanager.taskmanager.domain.records.CascadeArchiveResult;
 import org.example.taskmanager.taskmanager.domain.records.CascadeUnarchiveResult;
-import org.example.taskmanager.taskmanager.infrastructure.event.DomainEventPublisher;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
 import org.example.taskmanager.taskmanager.mapper.BoardMapper;
 import org.example.taskmanager.taskmanager.mapper.ProjectMapper;
@@ -20,6 +21,7 @@ import org.example.taskmanager.taskmanager.repository.ProjectRepository;
 import org.example.taskmanager.taskmanager.repository.WorkspaceRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.CascadeArchiveService;
 import org.example.taskmanager.taskmanager.service.interfaces.ProjectService;
+import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceAccessChecker;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,23 +31,26 @@ import java.util.UUID;
 @Slf4j
 @Service
 public class ProjectServiceImpl implements ProjectService {
+  private final WorkspaceAccessChecker workspaceAccessChecker;
   private final CascadeArchiveService cascadeArchiveService;
-  private final WorkspaceRepository  workspaceRepository;
+  private final WorkspaceAccessPort workspaceAccessPort;
   private final ProjectRepository projectRepository;
   private final BoardRepository boardRepository;
   private final ProjectMapper projectMapper;
   private final BoardMapper boardMapper;
 
   public ProjectServiceImpl(
+          WorkspaceAccessChecker workspaceAccessChecker,
           CascadeArchiveService cascadeArchiveService,
-          WorkspaceRepository workspaceRepository,
+          WorkspaceAccessPort workspaceAccessPort,
           ProjectRepository projectRepository,
           BoardRepository boardRepository,
           ProjectMapper projectMapper,
           BoardMapper boardMapper
   ) {
+    this.workspaceAccessChecker = workspaceAccessChecker;
     this.cascadeArchiveService = cascadeArchiveService;
-    this.workspaceRepository = workspaceRepository;
+    this.workspaceAccessPort = workspaceAccessPort;
     this.projectRepository = projectRepository;
     this.boardRepository = boardRepository;
     this.projectMapper = projectMapper;
@@ -54,12 +59,18 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Transactional
   @Override
-  public ProjectDto create(UUID workspaceId, String name, String description) {
+  public ProjectDto create(
+          UUID workspaceId,
+          String name,
+          String description,
+          UUID memberId
+  ) {
     log.info("creating project, workspaceId={}, name={}, description={}", workspaceId, name, description);
+    workspaceAccessChecker.check(RootEntityType.WORKSPACE, workspaceId, memberId);
 
-    if (!workspaceRepository.existsById(workspaceId)) {
-      log.error("project was not created, workspace not found, workspaceId={}", workspaceId);
-      throw new NotFoundException("Workspace with id " + workspaceId + " not found during Project create operation");
+    if (!workspaceAccessPort.exists(workspaceId)) {
+      throw new NotFoundException("Workspace with id " + workspaceId
+              + " not found during Project create operation");
     }
 
     Project project = new Project(workspaceId, name, description);
@@ -71,11 +82,14 @@ public class ProjectServiceImpl implements ProjectService {
 
   // ========================== архивация/разархивация =====================
 
-  // TODO валидация пользователя
   @Transactional
   @Override
-  public ProjectDto archive(UUID projectId, UUID memberId) {
+  public ProjectDto archive(
+          UUID projectId,
+          UUID memberId
+  ) {
     log.info("project archive starts, projectId={}", projectId);
+    workspaceAccessChecker.check(RootEntityType.PROJECT, projectId, memberId);
     Project project = getProject(projectId, "archive");
 
     project.archive(ArchiveReason.USER_ACTION);
@@ -91,16 +105,17 @@ public class ProjectServiceImpl implements ProjectService {
     return projectMapper.toDto(project);
   }
 
-  // TODO валидация пользователя
   @Transactional
   @Override
-  public ProjectDto unarchive(UUID projectId, UUID memberId) {
+  public ProjectDto unarchive(
+          UUID projectId,
+          UUID memberId
+  ) {
     log.info("project unarchive starts, projectId={}", projectId);
+    // проверка активности родителя происходит внутри check
+    workspaceAccessChecker.check(RootEntityType.PROJECT, projectId, memberId);
 
     Project project = getProject(projectId, "unarchive");
-    Workspace parent = getParent(project.getWorkspaceId(), "unarchive");
-
-    checkParentBeforeUnarchive(parent);
 
     project.unarchive(UnarchiveReason.USER_ACTION);
     projectRepository.save(project);
@@ -119,45 +134,50 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Transactional(readOnly = true)
   @Override
-  public List<BoardDto> getProjectBoards(UUID projectId) {
-    log.info("project getProjectBoards operation starts, projectId={}", projectId);
+  public List<BoardDto> getProjectBoards(
+          UUID projectId,
+          UUID memberId
+  ) {
     Project project = getProject(projectId, "getProjectBoards");
-
-    isProjectActive(project, "getProjectBoards");
+    requireProjectActive(project, "getProjectBoards");
 
     List<Board> boards = boardRepository.findAllByProjectId(projectId);
 
-    log.debug("board getProjectBoards operation completed, projectId={}", projectId);
+    log.debug("ProjectService getProjectBoards  completed, projectId={}", projectId);
     return boards.stream().map(boardMapper::toDto).toList();
   }
 
   @Transactional
   @Override
-  public ProjectDto changeName(UUID projectId, String newName) {
-    log.info("project changeName operation starts, projectId={}, newName={}", projectId, newName);
+  public ProjectDto changeName(
+          UUID projectId,
+          String newName,
+          UUID memberId
+  ) {
     Project project = getProject(projectId, "changeName");
 
-    isProjectActive(project, "changeName");
-
-    project.setName(newName);
+    // проверка на активность происходит внутри агрегата
+    project.changeName(newName);
     projectRepository.save(project);
 
-    log.debug("project changeName operation completed, projectId={}, newName={}", projectId, newName);
+    log.debug("ProjectService changeName completed, projectId={}, newName={}", projectId, newName);
     return projectMapper.toDto(project);
   }
 
   @Transactional
   @Override
-  public ProjectDto changeDescription(UUID projectId, String newDescription) {
-    log.info("project changeDescription operation starts, projectId={}, newDescription={}", projectId, newDescription);
+  public ProjectDto changeDescription(
+          UUID projectId,
+          String newDescription,
+          UUID memberId
+  ) {
     Project project = getProject(projectId, "changeDescription");
 
-    isProjectActive(project, "changeDescription");
-
-    project.setDescription(newDescription);
+    // проверка на активность происходит внутри агрегата
+    project.changeDescription(newDescription);
     projectRepository.save(project);
 
-    log.info("project changeDescription operation completed, projectId={}, newDescription={}", projectId, newDescription);
+    log.debug("ProjectService changeDescription completed, projectId={}, newDescription={}", projectId, newDescription);
     return projectMapper.toDto(project);
   }
 
@@ -166,36 +186,28 @@ public class ProjectServiceImpl implements ProjectService {
   private Project getProject(UUID projectId, String operationName) {
     return projectRepository
             .findById(projectId)
-            .orElseThrow(() -> {
-              log.error("project not found during {}, projectId={}", operationName, projectId);
-              return new NotFoundException("Project with id " + projectId
-                      + " not found during " + operationName + "operation");
-            });
+            .orElseThrow(() -> new NotFoundException("Project with id " + projectId
+                      + " not found during " + operationName + "operation"));
   }
 
   private Workspace getParent(UUID workspaceId,String operationName) {
     return workspaceRepository
             .findById(workspaceId)
-            .orElseThrow(() -> {
-              log.error("workspace not found during {}, workspaceId={}", operationName, workspaceId);
-              return new NotFoundException("Workspace as parent of project with id "
-                      + workspaceId + " not found during " + operationName + " operation");
-            });
+            .orElseThrow(() -> new NotFoundException("Workspace as parent of project with id "
+                      + workspaceId + " not found during " + operationName + " operation"));
   }
 
   private void checkParentBeforeUnarchive(Workspace parent) {
     if (parent.getArchiveState() != ArchiveState.ACTIVE) {
-      log.error("cannot unarchive project, workspace (parent) is archived, worksapaceId={}", parent.getId());
       throw new IllegalStateException("Cannot unarchive project because workspace (parent) with id "
               + parent.getId() + " is archived");
     }
   }
 
-  private void isProjectActive(Project project, String operationName) {
+  private void requireProjectActive(Project project, String operationName) {
     if (project.getArchiveState() != ArchiveState.ACTIVE) {
-      log.error("cannot do {}, project is archived, projectId={}", operationName, project.getId());
       throw new IllegalStateException("Cannot do " + operationName
-              + " operation because project with id " + project.getId() + " is archived");
+              + ", project is archived, id=" + project.getId());
     }
   }
 }

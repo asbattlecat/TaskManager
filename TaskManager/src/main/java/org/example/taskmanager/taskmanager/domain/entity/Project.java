@@ -17,10 +17,10 @@ import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
 @Getter
-@Setter
 @NoArgsConstructor
 @Entity
 @Slf4j
@@ -31,7 +31,7 @@ public class Project extends AggregateRoot {
   @Column(nullable = false)
   private ArchiveState archiveState;
 
-  @Column(nullable = false)
+  @Column(nullable = false, updatable = false)
   private UUID workspaceId;
 
   @Column(nullable = false)
@@ -40,11 +40,11 @@ public class Project extends AggregateRoot {
   @Column
   private String description;
 
-  @Column(nullable = false)
+  @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
   @Column
-  private Instant updatedAt;
+  private Instant updatedAt = null;
 
   @Version
   private Long version;
@@ -100,5 +100,39 @@ public class Project extends AggregateRoot {
       case ACTIVE ->
               false;
     };
+  }
+
+  public void changeName(String newName) {
+    if (Objects.equals(name, newName)) return;
+
+    requireActive("changeName");
+    String old = name;
+    this.name = newName;
+
+    touch();
+    log.debug("project changeName completed, id={}, old={}, new={}", id, old, newName);
+  }
+
+  public void changeDescription(String newDescription) {
+    if (Objects.equals(description, newDescription)) return;
+
+    requireActive("changeDescription");
+    String old = this.description;
+    this.description = newDescription;
+
+    touch();
+    log.debug("project changeDescription completed, id={}, old={}, new={}", id, old, newDescription);
+  }
+
+  // ============= helpers =================
+
+  private void requireActive(String operationName) {
+    if (archiveState != ArchiveState.ACTIVE)
+      throw new IllegalStateException("Cannot do " + operationName
+              + ", project is archived, id=" + id);
+  }
+
+  private void touch() {
+    this.updatedAt = Instant.now();
   }
 }

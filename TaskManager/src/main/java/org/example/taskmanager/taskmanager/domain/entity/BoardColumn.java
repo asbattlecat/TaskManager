@@ -5,11 +5,13 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
+import java.util.Objects;
 import java.util.UUID;
 
+@Slf4j
 @Getter
-@Setter
 @NoArgsConstructor
 @Entity
 @Table(
@@ -46,5 +48,23 @@ public class BoardColumn {
     this.boardId = boardId;
     this.name = name;
     this.position = position;
+  }
+
+  public void changeName(String newName) {
+    if (Objects.equals(name, newName)) return;
+
+    String old = name;
+    this.name = newName;
+
+    log.debug("BoardColumn changeName completed, id={}, old={}, new={}", id, old, newName);
+  }
+
+  public void changePosition(Integer newPosition) {
+    if (Objects.equals(position, newPosition)) return;
+
+    Integer old = position;
+    this.position = newPosition;
+
+    log.debug("BoardColumn changePosition completed, id={}, old={}, new={}", id, old, newPosition);
   }
 }

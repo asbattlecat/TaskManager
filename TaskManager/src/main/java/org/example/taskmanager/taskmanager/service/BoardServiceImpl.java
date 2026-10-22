@@ -93,7 +93,6 @@ public class BoardServiceImpl implements BoardService {
 
   // ================== архивация / разархивация ==================
 
-  // TODO разобраться, нужен ли здесь save
   @Transactional
   @Override
   public BoardDto archive(
@@ -118,7 +117,6 @@ public class BoardServiceImpl implements BoardService {
     return boardMapper.toDto(board);
   }
 
-  // TODO разобраться, нужен ли здесь save
   @Transactional
   @Override
   public BoardDto unarchive(
@@ -155,9 +153,10 @@ public class BoardServiceImpl implements BoardService {
     workspaceAccessChecker.check(RootEntityType.BOARD, boardId, memberId);
     Board board = getBoard(boardId, "changeName");
 
+    // проверка активности борда будет внутри агрегата
     board.changeName(newName);
 
-    log.debug("BoardService changeName completed, boardId=" + boardId);
+    log.debug("BoardService changeName completed, boardId={}", boardId);
     return boardMapper.toDto(board);
   }
 
@@ -171,12 +170,14 @@ public class BoardServiceImpl implements BoardService {
     workspaceAccessChecker.check(RootEntityType.BOARD, boardId, memberId);
     Board board = getBoard(boardId, "changeDescription");
 
+    // проверка активности борда будет внутри агрегата
     board.changeDescription(newDescription);
 
-    log.debug("BoardService changeDescription completed, boardId=" + boardId);
+    log.debug("BoardService changeDescription completed, boardId={}", boardId);
     return boardMapper.toDto(board);
   }
 
+  // TODO добавить пагинацию?
   @Transactional(readOnly = true)
   @Override
   public List<TaskDto> getTasks(
@@ -202,15 +203,18 @@ public class BoardServiceImpl implements BoardService {
           @NotNull UUID memberId
   ) {
     workspaceAccessChecker.check(RootEntityType.BOARD, boardId, memberId);
+    Board board = getBoard(boardId, "changeColumnName");
+    requireBoardActive(board, "changeColumnName");
     BoardColumn boardColumn =  boardColumnRepository
             .findById(columnId)
             .orElseThrow(() -> new NotFoundException("Board column not found, id=" + columnId));
-    if (!Objects.equals((boardColumn.getBoardId(), boardId)) {
+
+    if (!Objects.equals(boardColumn.getBoardId(), boardId)) {
       throw new IllegalArgumentException("Board column does not belong to board, columnId="
               + columnId + ", boardId=" + boardId);
     }
 
-    boardColumn.setName(newName);
+    boardColumn.changeName(newName);
 
     log.debug("BoardService changeColumnName completed, columnId={}, newName={}", columnId, newName);
     return boardColumnMapper.toDto(boardColumn);
@@ -236,6 +240,10 @@ public class BoardServiceImpl implements BoardService {
           @NotNull Integer newPosition,
           @NotNull UUID memberId
   ) {
+    workspaceAccessChecker.check(RootEntityType.BOARD, boardId, memberId);
+    Board board = getBoard(boardId, "changeColumnPosition");
+    requireBoardActive(board, "changeColumnPosition");
+
     List<BoardColumn> columns = boardColumnRepository.findAllByBoardIdOrderByPositionAscPessLock(boardId);
 
     if (columns.isEmpty()) {
@@ -255,14 +263,14 @@ public class BoardServiceImpl implements BoardService {
     }
 
     if (oldPosition < newPosition) {
-      columns.get(oldPosition).setPosition(newPosition);
+      columns.get(oldPosition).changePosition(newPosition);
       for (int i = oldPosition + 1; i <= newPosition; i++) {
-        columns.get(i).setPosition(i - 1);
+        columns.get(i).changePosition(i - 1);
       }
     } else {
-      columns.get(oldPosition).setPosition(newPosition);
+      columns.get(oldPosition).changePosition(newPosition);
       for (int i = oldPosition - 1; i >= newPosition; i--) {
-        columns.get(i).setPosition(i + 1);
+        columns.get(i).changePosition(i + 1);
       }
     }
 

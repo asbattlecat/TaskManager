@@ -7,7 +7,6 @@ import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.domain.event.BoardArchivedEvent;
 import org.example.taskmanager.taskmanager.domain.event.BoardUnarchivedEvent;
@@ -32,7 +31,7 @@ public class Board extends AggregateRoot {
   @Column(nullable = false)
   private ArchiveState archiveState;
 
-  @Column(nullable = false)
+  @Column(nullable = false, updatable = false)
   private UUID projectId;
 
   @Column(nullable = false)
@@ -44,11 +43,11 @@ public class Board extends AggregateRoot {
   @Column(nullable = false, updatable = false)
   private BoardType type;
 
-  @Column(nullable = false)
+  @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
   @Column
-  private Instant updatedAt;
+  private Instant updatedAt = null;
 
   @Version
   private Long version;
@@ -117,7 +116,7 @@ public class Board extends AggregateRoot {
 
   public void changeName(String newName) {
     if (Objects.equals(name, newName)) return;
-    checkIsActive("changeName");
+    requireActive("changeName");
 
     String old = name;
     this.name = newName;
@@ -127,7 +126,7 @@ public class Board extends AggregateRoot {
 
   public void changeDescription(String newDescription) {
     if (Objects.equals(description, newDescription)) return;
-    checkIsActive("changeDescription");
+    requireActive("changeDescription");
 
     String old = description;
     this.description = newDescription;
@@ -141,7 +140,7 @@ public class Board extends AggregateRoot {
     updatedAt = Instant.now();
   }
 
-  private void checkIsActive(String operationName) {
+  private void requireActive(String operationName) {
     if (archiveState != ArchiveState.ACTIVE) {
       throw new IllegalStateException("Cannot do " + operationName
               + ", board is archived, id=" + id);
