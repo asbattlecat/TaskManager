@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.taskmanager.taskmanager.domain.aggregate.Task;
 import org.springframework.validation.annotation.Validated;
 
 import java.time.Instant;
@@ -14,9 +15,9 @@ import java.util.UUID;
 
 @Slf4j
 @Getter
-@NoArgsConstructor
 @Entity
 @Validated
+@NoArgsConstructor
 public class Comment {
   @Id
   private UUID id;
@@ -52,8 +53,8 @@ public class Comment {
 
     String old = content;
     this.content = newContent;
-    touch();
 
+    touch();
     log.debug("comment changeContent completed, id={}, old={}, new={}", id, old, newContent);
   }
 
@@ -61,7 +62,7 @@ public class Comment {
   public boolean equals(Object object) {
     if (this == object) return true;
     if (!(object instanceof Comment comment)) return false;
-    return id != null && id.equals(comment.id);
+    return id != null && Objects.equals(id, comment.id);
   }
 
   @Override

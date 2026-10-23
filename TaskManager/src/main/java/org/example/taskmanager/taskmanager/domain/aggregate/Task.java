@@ -1,4 +1,4 @@
-package org.example.taskmanager.taskmanager.domain.entity;
+package org.example.taskmanager.taskmanager.domain.aggregate;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -6,9 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.taskmanager.taskmanager.domain.event.TaskArchivedEvent;
-import org.example.taskmanager.taskmanager.domain.event.TaskUnarchivedEvent;
-import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
+import org.example.taskmanager.taskmanager.domain.entity.Comment;
+import org.example.taskmanager.taskmanager.domain.entity.Tag;
 import org.example.taskmanager.taskmanager.domain.enums.*;
 import org.example.taskmanager.taskmanager.infrastructure.exception.AlreadyExistsException;
 import org.springframework.validation.annotation.Validated;
@@ -16,12 +15,12 @@ import org.springframework.validation.annotation.Validated;
 import java.time.Instant;
 import java.util.*;
 
+@Slf4j
 @Getter
 @Entity
-@Table(name = "task")
-@NoArgsConstructor
-@Slf4j
 @Validated
+@NoArgsConstructor
+@Table(name = "task")
 public class Task extends AggregateRoot {
   @Id
   private UUID id;
@@ -85,9 +84,17 @@ public class Task extends AggregateRoot {
   )
   private Set<Tag> tags = new HashSet<>();
 
-  public Task(@NotNull UUID boardId, UUID columnId, @NotBlank String name, String description,
-              @NotNull TaskStatus status, @NotNull TaskPriority priority, UUID assigneeId,
-              @NotNull UUID creatorId, Instant deadline) {
+  public Task(
+          @NotNull  UUID boardId,
+                    UUID columnId,
+          @NotBlank String name,
+                    String description,
+          @NotNull  TaskStatus status,
+          @NotNull  TaskPriority priority,
+                    UUID assigneeId,
+          @NotNull  UUID creatorId,
+                    Instant deadline
+  ) {
     if (status != TaskStatus.TODO) {
       throw new IllegalArgumentException("Cannot create task with status " + status + ", must be TO_DO");
     }
@@ -122,7 +129,7 @@ public class Task extends AggregateRoot {
 
   // =========== архивация/разархивация =============
 
-  public void archive(ArchiveReason reason) {
+  public void archive(@NotNull ArchiveReason reason) {
     log.info("task archive operation starts, id={}, reason={}", id, reason);
     if (archiveState != ArchiveState.ACTIVE) {
       throw new IllegalStateException("Task is already archived");
@@ -139,7 +146,7 @@ public class Task extends AggregateRoot {
     touch();
   }
 
-  public void unarchive(UnarchiveReason reason) {
+  public void unarchive(@NotNull UnarchiveReason reason) {
     log.info("task unarchive operation starts, id={}, reason={}", id, reason);
     if (archiveState == ArchiveState.ACTIVE) {
       throw new IllegalStateException("Task is already active, cannot unarchive");
@@ -167,6 +174,7 @@ public class Task extends AggregateRoot {
 
   // ============= изменение полей =========================
 
+  // перед вызовом этого метода нужно проверить, является ли task частью kanban доски
   public void changeColumnId(UUID newColumnId) {
     if (Objects.equals(columnId, newColumnId)) return;
     requireActive("changeColumnId");
@@ -197,7 +205,7 @@ public class Task extends AggregateRoot {
     log.debug("task changeDescription completed, id={}, old={}, new={}", id, old, newDescription);
   }
 
-  public void changeStatus(TaskStatus newStatus) {
+  public void changeStatus(@NotNull TaskStatus newStatus) {
     log.info("task changeStatus operation starts, id={}, newStatus={}", id, newStatus);
     if (status == newStatus) return;
     requireActive("changeStatus");
@@ -208,7 +216,7 @@ public class Task extends AggregateRoot {
     log.debug("task changeStatus completed, id={}, old={}, new={}", id, old, newStatus);
   }
 
-  public void changePriority(TaskPriority newPriority) {
+  public void changePriority(@NotNull TaskPriority newPriority) {
     if (priority == newPriority) return;
     requireActive("changePriority");
 
@@ -239,7 +247,7 @@ public class Task extends AggregateRoot {
     log.debug("task changeDeadline completed, id={}, old={}, new={}", id, old, newDeadline);
   }
 
-  public Comment addComment(UUID authorId, String content) {
+  public Comment addComment(@NotNull UUID authorId, @NotBlank String content) {
     requireActive("addComment");
 
     if (authorId == null || content == null)
@@ -247,16 +255,14 @@ public class Task extends AggregateRoot {
 
     Comment comment = new Comment(this, authorId, content);
     comments.add(comment);
+
     touch();
     log.debug("task addComment completed, id={}, commentId={}", id, comment.getId());
     return comment;
   }
 
-  public Tag addTag(String name, TagColor color) {
+  public Tag addTag(@NotBlank String name, @NotNull TagColor color) {
     requireActive("addTag");
-
-    if (name == null || color == null)
-      throw new IllegalArgumentException("Task addTag operation: name or color is null");
 
     boolean exists = tags.stream()
             .anyMatch(t -> t.getName().equalsIgnoreCase(name));

@@ -40,7 +40,7 @@ public class User extends AggregateRoot {
   @Column(nullable = false)
   private String hashedPassword;
 
-  @Column(nullable = false)
+  @Column
   private boolean active;
 
   @Column(nullable = false, updatable = false)
@@ -63,6 +63,19 @@ public class User extends AggregateRoot {
     this.active = active;
 
     this.createdAt = Instant.now();
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (this == object) return true;
+    if (!(object instanceof User user)) return false;
+
+    return id != null && Objects.equals(id, user.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(id);
   }
 
   // ========= активация/деактивация =================

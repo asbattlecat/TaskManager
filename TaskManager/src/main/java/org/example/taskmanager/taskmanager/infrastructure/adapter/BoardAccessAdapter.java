@@ -1,6 +1,6 @@
 package org.example.taskmanager.taskmanager.infrastructure.adapter;
 
-import org.example.taskmanager.taskmanager.domain.entity.Board;
+import org.example.taskmanager.taskmanager.domain.aggregate.Board;
 import org.example.taskmanager.taskmanager.domain.entity.BoardColumn;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.BoardType;

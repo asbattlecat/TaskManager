@@ -2,7 +2,7 @@ package org.example.taskmanager.taskmanager.infrastructure.specification;
 
 import jakarta.persistence.criteria.Root;
 import org.example.taskmanager.taskmanager.domain.entity.Tag;
-import org.example.taskmanager.taskmanager.domain.entity.Task;
+import org.example.taskmanager.taskmanager.domain.aggregate.Task;
 import org.example.taskmanager.taskmanager.domain.enums.TaskStatus;
 import org.springframework.data.jpa.domain.Specification;
 

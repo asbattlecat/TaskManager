@@ -15,9 +15,9 @@ import java.util.UUID;
 
 @Slf4j
 @Getter
-@NoArgsConstructor
 @Entity
 @Validated
+@NoArgsConstructor
 @Table(
         name = "board_column",
         uniqueConstraints = {
@@ -60,6 +60,21 @@ public class BoardColumn {
     this.position = position;
     this.createdAt = Instant.now();
   }
+
+  @Override
+  public boolean equals(Object object) {
+    if (this == object) return true;
+    if (!(object instanceof BoardColumn boardColumn)) return false;
+
+    return id != null && Objects.equals(id, boardColumn.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id);
+  }
+
+  // ============== изменение полей ================
 
   public void changeName(@NotBlank String newName) {
     if (Objects.equals(name, newName)) return;

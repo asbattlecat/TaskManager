@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.taskmanager.taskmanager.domain.aggregate.Task;
 import org.example.taskmanager.taskmanager.domain.enums.TagColor;
 import org.springframework.validation.annotation.Validated;
 
@@ -47,16 +48,6 @@ public class Tag {
     this.color = color;
   }
 
-  public void changeName(@NotBlank String newName) {
-    if (Objects.equals(name, newName)) return;
-
-    String old = name;
-    this.name = newName;
-
-    touch();
-    log.debug("Tag changeName completed, id={}, old={}, new={}", id, old, newName);
-  }
-
   @Override
   public boolean equals(Object object) {
     if (object == this) return true;
@@ -68,6 +59,16 @@ public class Tag {
   @Override
   public int hashCode() {
     return Objects.hashCode(id);
+  }
+
+  public void changeName(@NotBlank String newName) {
+    if (Objects.equals(name, newName)) return;
+
+    String old = name;
+    this.name = newName;
+
+    touch();
+    log.debug("Tag changeName completed, id={}, old={}, new={}", id, old, newName);
   }
 
   // =========== helpers =================

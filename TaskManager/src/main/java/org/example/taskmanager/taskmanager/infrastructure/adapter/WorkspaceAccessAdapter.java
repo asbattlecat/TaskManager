@@ -1,7 +1,7 @@
 package org.example.taskmanager.taskmanager.infrastructure.adapter;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.taskmanager.taskmanager.domain.entity.Workspace;
+import org.example.taskmanager.taskmanager.domain.aggregate.Workspace;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.port.WorkspaceAccessPort;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;

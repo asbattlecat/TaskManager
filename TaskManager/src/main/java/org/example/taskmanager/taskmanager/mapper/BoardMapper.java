@@ -1,7 +1,7 @@
 package org.example.taskmanager.taskmanager.mapper;
 
 import org.example.taskmanager.taskmanager.controller.dto.response.BoardDto;
-import org.example.taskmanager.taskmanager.domain.entity.Board;
+import org.example.taskmanager.taskmanager.domain.aggregate.Board;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")

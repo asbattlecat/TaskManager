@@ -7,6 +7,7 @@ import org.example.taskmanager.taskmanager.controller.dto.response.AuditEntityDt
 import org.example.taskmanager.taskmanager.controller.dto.response.CommentDto;
 import org.example.taskmanager.taskmanager.controller.dto.response.TagDto;
 import org.example.taskmanager.taskmanager.controller.dto.response.TaskDto;
+import org.example.taskmanager.taskmanager.domain.aggregate.Task;
 import org.example.taskmanager.taskmanager.domain.entity.*;
 import org.example.taskmanager.taskmanager.domain.enums.*;
 import org.example.taskmanager.taskmanager.domain.port.BoardAccessPort;

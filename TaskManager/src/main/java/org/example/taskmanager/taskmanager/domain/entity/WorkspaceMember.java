@@ -10,6 +10,7 @@ import org.example.taskmanager.taskmanager.domain.enums.WorkspaceMemberState;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceRole;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -39,7 +40,11 @@ public class WorkspaceMember {
   @Column
   private Instant updatedAt;
 
-  public WorkspaceMember(@NotNull UUID workspaceId, @NotNull UUID userId, @NotNull WorkspaceRole role) {
+  public WorkspaceMember(
+          @NotNull UUID workspaceId,
+          @NotNull UUID userId,
+          @NotNull WorkspaceRole role
+  ) {
     id = UUID.randomUUID();
 
     this.workspaceId = workspaceId;
@@ -48,6 +53,19 @@ public class WorkspaceMember {
     this.role = role;
 
     this.joinedAt = Instant.now();
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (this == object) return true;
+    if (!(object instanceof WorkspaceMember workspaceMember)) return false;
+
+    return id != null && Objects.equals(id, workspaceMember.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(id);
   }
 
   public void archive() {

@@ -1,6 +1,6 @@
 package org.example.taskmanager.taskmanager.repository;
 
-import org.example.taskmanager.taskmanager.domain.entity.Task;
+import org.example.taskmanager.taskmanager.domain.aggregate.Task;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 

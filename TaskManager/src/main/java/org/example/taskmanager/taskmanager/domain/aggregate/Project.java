@@ -1,18 +1,11 @@
-package org.example.taskmanager.taskmanager.domain.entity;
+package org.example.taskmanager.taskmanager.domain.aggregate;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Version;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.example.taskmanager.taskmanager.domain.event.WorkspaceArchivedEvent;
-import org.example.taskmanager.taskmanager.domain.event.WorkspaceUnarchivedEvent;
-import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
@@ -22,17 +15,21 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-@Entity
-@Getter
-@NoArgsConstructor
-@Validated
 @Slf4j
-public class Workspace extends AggregateRoot {
+@Getter
+@Entity
+@Validated
+@NoArgsConstructor
+@Table(name = "project")
+public class Project extends AggregateRoot {
   @Id
   private UUID id;
 
   @Column(nullable = false)
   private ArchiveState archiveState;
+
+  @Column(nullable = false, updatable = false)
+  private UUID workspaceId;
 
   @Column(nullable = false)
   private String name;
@@ -40,37 +37,45 @@ public class Workspace extends AggregateRoot {
   @Column
   private String description;
 
-  @Column(nullable = false)
-  private UUID ownerId;
-
   @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
   @Column
-  private Instant updatedAt;
+  private Instant updatedAt = null;
 
   @Version
   private Long version;
 
-
-  public Workspace(@NotBlank String name, String description, @NotNull UUID ownerId) {
-    id =  UUID.randomUUID();
+  public Project(@NotNull UUID workspaceId, @NotBlank String name, String description) {
+    id = UUID.randomUUID();
 
     archiveState = ArchiveState.ACTIVE;
 
+    this.workspaceId = workspaceId;
     this.name = name;
     this.description = description;
-    this.ownerId = ownerId;
 
     this.createdAt = Instant.now();
   }
 
-  // ============== архивация / разархивация ================
+  @Override
+  public boolean equals(Object object) {
+    if (this == object) return true;
+    if (!(object instanceof Project project)) return false;
+
+    return id != null && Objects.equals(id, project.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(id);
+  }
+
+  // =============== архивация/разархивация ==============
 
   public void archive(@NotNull ArchiveReason reason) {
-    if (archiveState != ArchiveState.ACTIVE) {
-      throw new IllegalStateException("Workspace is already archived");
-    }
+    log.info("task archive starts, id={}, reason={}", id, reason);
+    requireActive("archive");
 
     if (reason == ArchiveReason.USER_ACTION) {
       archiveState = ArchiveState.USER_ARCHIVED;
@@ -78,22 +83,24 @@ public class Workspace extends AggregateRoot {
       archiveState = ArchiveState.PARENT_ARCHIVED;
     }
 
-//    registerEvent(new WorkspaceArchivedEvent(id));
-    log.debug("workspace archived, id={}", id);
+//    registerEvent(new ProjectArchivedEvent(id));
+    touch();
+    log.debug("project archived, id={}", id);
   }
 
-
   public void unarchive(@NotNull UnarchiveReason reason) {
+    log.info("task unarchive starts, id={}, reason={}", id, reason);
     if (archiveState == ArchiveState.ACTIVE) {
-      throw new IllegalStateException("Workspace is already active, cannot unarchive");
+      throw new IllegalStateException("Project is already active, cannot unarchive");
     }
 
     if (!canBeUnarchived(reason)) throw new IllegalStateException("Project cannot be unarchived");
 
     archiveState = ArchiveState.ACTIVE;
 
-//    registerEvent(new WorkspaceUnarchivedEvent(id));
-    log.debug("workspace unarchived, id={}", id);
+//    registerEvent(new ProjectUnarchivedEvent(id));
+    touch();
+    log.debug("project unarchived, id={}", id);
   }
 
   public boolean canBeUnarchived(UnarchiveReason reason) {
@@ -107,46 +114,36 @@ public class Workspace extends AggregateRoot {
     };
   }
 
-  // ============ изменение полей ==============
+  // =============== изменение полей ==============
 
   public void changeName(@NotBlank String newName) {
-    if (Objects.equals(this.name, newName)) return;
+    if (Objects.equals(name, newName)) return;
     requireActive("changeName");
 
-    String old = this.name;
+    String old = name;
     this.name = newName;
+
     touch();
-    log.debug("workspace changeName completed, id={}, old={}, new={}", id, old, newName);
+    log.debug("project changeName completed, id={}, old={}, new={}", id, old, newName);
   }
 
   public void changeDescription(String newDescription) {
-    if (Objects.equals(this.description, newDescription)) return;
+    if (Objects.equals(description, newDescription)) return;
     requireActive("changeDescription");
 
     String old = this.description;
     this.description = newDescription;
+
     touch();
-    log.debug("workspace changeDescription completed, id={}, old={}, new={}",
-            id, old, newDescription);
+    log.debug("project changeDescription completed, id={}, old={}, new={}", id, old, newDescription);
   }
 
-  public void changeOwnerId(@NotNull UUID newOwnerId) {
-    if (Objects.equals(this.ownerId, newOwnerId)) return;
-    requireActive("changeOwnerId");
-
-    UUID old = newOwnerId;
-    this.ownerId = newOwnerId;
-    touch();
-    log.debug("workspace changeOwnerId completed, id={}, old={}, new={}", id, old, newOwnerId);
-  }
-
-  // =========== helpers =============
+  // ============= helpers =================
 
   private void requireActive(String operationName) {
-    if (archiveState != ArchiveState.ACTIVE) {
+    if (archiveState != ArchiveState.ACTIVE)
       throw new IllegalStateException("Cannot do " + operationName
-              + ", workspace is archived, id=" + id);
-    }
+              + ", project is archived, id=" + id);
   }
 
   private void touch() {

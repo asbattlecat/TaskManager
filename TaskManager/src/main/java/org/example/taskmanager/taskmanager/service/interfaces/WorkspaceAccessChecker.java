@@ -1,6 +1,5 @@
 package org.example.taskmanager.taskmanager.service.interfaces;
 
-import org.example.taskmanager.taskmanager.domain.entity.Task;
 import org.example.taskmanager.taskmanager.domain.enums.RootEntityType;
 
 import java.util.UUID;

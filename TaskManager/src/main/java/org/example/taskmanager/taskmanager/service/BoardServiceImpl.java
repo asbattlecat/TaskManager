@@ -1,15 +1,14 @@
 package org.example.taskmanager.taskmanager.service;
 
-import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.controller.dto.response.BoardColumnDto;
 import org.example.taskmanager.taskmanager.controller.dto.response.BoardDto;
 import org.example.taskmanager.taskmanager.controller.dto.response.TaskDto;
-import org.example.taskmanager.taskmanager.domain.entity.Board;
+import org.example.taskmanager.taskmanager.domain.aggregate.Board;
 import org.example.taskmanager.taskmanager.domain.entity.BoardColumn;
-import org.example.taskmanager.taskmanager.domain.entity.Task;
+import org.example.taskmanager.taskmanager.domain.aggregate.Task;
 import org.example.taskmanager.taskmanager.domain.enums.*;
 import org.example.taskmanager.taskmanager.domain.port.ProjectAccessPort;
 import org.example.taskmanager.taskmanager.domain.records.CascadeArchiveResult;

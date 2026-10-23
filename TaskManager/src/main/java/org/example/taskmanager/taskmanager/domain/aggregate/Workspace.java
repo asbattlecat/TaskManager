@@ -1,15 +1,14 @@
-package org.example.taskmanager.taskmanager.domain.entity;
+package org.example.taskmanager.taskmanager.domain.aggregate;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.example.taskmanager.taskmanager.domain.event.ProjectArchivedEvent;
-import org.example.taskmanager.taskmanager.domain.event.ProjectUnarchivedEvent;
-import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
@@ -19,21 +18,17 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-@Getter
-@NoArgsConstructor
-@Entity
-@Table(name = "project")
 @Slf4j
+@Entity
+@Getter
 @Validated
-public class Project extends AggregateRoot {
+@NoArgsConstructor
+public class Workspace extends AggregateRoot {
   @Id
   private UUID id;
 
   @Column(nullable = false)
   private ArchiveState archiveState;
-
-  @Column(nullable = false, updatable = false)
-  private UUID workspaceId;
 
   @Column(nullable = false)
   private String name;
@@ -41,31 +36,47 @@ public class Project extends AggregateRoot {
   @Column
   private String description;
 
+  @Column(nullable = false)
+  private UUID ownerId;
+
   @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
   @Column
-  private Instant updatedAt = null;
+  private Instant updatedAt;
 
   @Version
   private Long version;
 
-  public Project(@NotNull UUID workspaceId, @NotBlank String name, String description) {
-    id = UUID.randomUUID();
+
+  public Workspace(@NotBlank String name, String description, @NotNull UUID ownerId) {
+    id =  UUID.randomUUID();
 
     archiveState = ArchiveState.ACTIVE;
 
-    this.workspaceId = workspaceId;
     this.name = name;
     this.description = description;
+    this.ownerId = ownerId;
 
     this.createdAt = Instant.now();
   }
 
-  // =============== архивация/разархивация ==============
+  @Override
+  public boolean equals(Object object) {
+    if (this == object) return true;
+    if (!(object instanceof Workspace workspace)) return false;
+
+    return id != null && Objects.equals(id, workspace.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(id);
+  }
+
+  // ============== архивация / разархивация ================
 
   public void archive(@NotNull ArchiveReason reason) {
-    log.info("task archive starts, id={}, reason={}", id, reason);
     requireActive("archive");
 
     if (reason == ArchiveReason.USER_ACTION) {
@@ -74,24 +85,22 @@ public class Project extends AggregateRoot {
       archiveState = ArchiveState.PARENT_ARCHIVED;
     }
 
-//    registerEvent(new ProjectArchivedEvent(id));
-    touch();
-    log.debug("project archived, id={}", id);
+//    registerEvent(new WorkspaceArchivedEvent(id));
+    log.debug("workspace archived, id={}", id);
   }
 
+
   public void unarchive(@NotNull UnarchiveReason reason) {
-    log.info("task unarchive starts, id={}, reason={}", id, reason);
     if (archiveState == ArchiveState.ACTIVE) {
-      throw new IllegalStateException("Project is already active, cannot unarchive");
+      throw new IllegalStateException("Workspace is already active, cannot unarchive");
     }
 
     if (!canBeUnarchived(reason)) throw new IllegalStateException("Project cannot be unarchived");
 
     archiveState = ArchiveState.ACTIVE;
 
-//    registerEvent(new ProjectUnarchivedEvent(id));
-    touch();
-    log.debug("project unarchived, id={}", id);
+//    registerEvent(new WorkspaceUnarchivedEvent(id));
+    log.debug("workspace unarchived, id={}", id);
   }
 
   public boolean canBeUnarchived(UnarchiveReason reason) {
@@ -105,36 +114,49 @@ public class Project extends AggregateRoot {
     };
   }
 
-  // =============== изменение полей ==============
+  // ============ изменение полей ==============
 
   public void changeName(@NotBlank String newName) {
-    if (Objects.equals(name, newName)) return;
-
+    if (Objects.equals(this.name, newName)) return;
     requireActive("changeName");
-    String old = name;
+
+    String old = this.name;
     this.name = newName;
 
     touch();
-    log.debug("project changeName completed, id={}, old={}, new={}", id, old, newName);
+    log.debug("workspace changeName completed, id={}, old={}, new={}", id, old, newName);
   }
 
   public void changeDescription(String newDescription) {
-    if (Objects.equals(description, newDescription)) return;
-
+    if (Objects.equals(this.description, newDescription)) return;
     requireActive("changeDescription");
+
     String old = this.description;
     this.description = newDescription;
 
     touch();
-    log.debug("project changeDescription completed, id={}, old={}, new={}", id, old, newDescription);
+    log.debug("workspace changeDescription completed, id={}, old={}, new={}",
+            id, old, newDescription);
   }
 
-  // ============= helpers =================
+  public void changeOwnerId(@NotNull UUID newOwnerId) {
+    if (Objects.equals(this.ownerId, newOwnerId)) return;
+    requireActive("changeOwnerId");
+
+    UUID old = this.ownerId;
+    this.ownerId = newOwnerId;
+
+    touch();
+    log.debug("workspace changeOwnerId completed, id={}, old={}, new={}", id, old, newOwnerId);
+  }
+
+  // =========== helpers =============
 
   private void requireActive(String operationName) {
-    if (archiveState != ArchiveState.ACTIVE)
+    if (archiveState != ArchiveState.ACTIVE) {
       throw new IllegalStateException("Cannot do " + operationName
-              + ", project is archived, id=" + id);
+              + ", workspace is archived, id=" + id);
+    }
   }
 
   private void touch() {

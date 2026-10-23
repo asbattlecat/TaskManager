@@ -1,6 +1,6 @@
 package org.example.taskmanager.taskmanager.infrastructure.adapter;
 
-import org.example.taskmanager.taskmanager.domain.entity.Project;
+import org.example.taskmanager.taskmanager.domain.aggregate.Project;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.port.ProjectAccessPort;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;

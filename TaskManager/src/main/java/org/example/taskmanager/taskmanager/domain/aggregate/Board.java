@@ -1,4 +1,4 @@
-package org.example.taskmanager.taskmanager.domain.entity;
+package org.example.taskmanager.taskmanager.domain.aggregate;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -6,9 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.taskmanager.taskmanager.domain.event.BoardArchivedEvent;
-import org.example.taskmanager.taskmanager.domain.event.BoardUnarchivedEvent;
-import org.example.taskmanager.taskmanager.domain.aggregate.AggregateRoot;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.BoardType;
@@ -19,12 +16,12 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-@Getter
-@NoArgsConstructor
-@Entity
-@Table(name = "board")
-@Validated
 @Slf4j
+@Getter
+@Entity
+@Validated
+@NoArgsConstructor
+@Table(name = "board")
 public class Board extends AggregateRoot {
   @Id
   private UUID id;
@@ -64,6 +61,20 @@ public class Board extends AggregateRoot {
     this.type = type;
 
     createdAt = Instant.now();
+    log.debug("board created, id={}", id);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (this == object) return true;
+    if (!(object instanceof Board board)) return false;
+
+    return id != null && Objects.equals(id, board.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(id);
   }
 
   // ========= работа с архивацией/разархивацией =========
@@ -112,7 +123,7 @@ public class Board extends AggregateRoot {
 
   // =========== изменение полей =========
 
-  public void changeName(String newName) {
+  public void changeName(@NotBlank String newName) {
     if (Objects.equals(name, newName)) return;
     requireActive("changeName");
 
