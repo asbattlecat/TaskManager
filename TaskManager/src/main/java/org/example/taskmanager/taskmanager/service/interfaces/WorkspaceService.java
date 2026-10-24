@@ -12,7 +12,7 @@ public interface WorkspaceService {
   WorkspaceDto create(String name, String description, UUID ownerId);
   WorkspaceDto archive(UUID workspaceId, UUID memberId);
   WorkspaceDto unarchive(UUID workspaceId, UUID memberId);
-  List<ProjectDto> getProjects(UUID workspaceId);
-  WorkspaceDto changeName(UUID workspaceId, String newName);
-  WorkspaceDto changeDescription(UUID workspaceId, String newDescription);
+  List<ProjectDto> getProjects(UUID workspaceId, UUID memberId);
+  WorkspaceDto changeName(UUID workspaceId, String newName, UUID memberId);
+  WorkspaceDto changeDescription(UUID workspaceId, String newDescription, UUID memberId);
 }

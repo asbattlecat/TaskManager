@@ -1,5 +1,7 @@
 package org.example.taskmanager.taskmanager.service;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.controller.dto.response.AuditEntityDto;
 import org.example.taskmanager.taskmanager.domain.entity.AuditEntry;
@@ -26,9 +28,10 @@ public class AuditEntityServiceImpl implements AuditEntityService {
     this.mapper = mapper;
   }
 
+  // не сделал @NotBlank String поля потому что старые/новые значения полей могут быть пустыми
   @Transactional
   @Override
-  public void create(UUID taskId, UUID userId, String fieldName, String oldValue, String newValue) {
+  public void create(@NotNull UUID taskId, UUID userId, @NotBlank String fieldName, @NotNull String oldValue, @NotNull String newValue) {
     AuditEntry auditEntry = new AuditEntry(taskId, userId, fieldName, oldValue, newValue);
     auditEntityRepository.save(auditEntry);
 
@@ -37,7 +40,7 @@ public class AuditEntityServiceImpl implements AuditEntityService {
 
   @Transactional
   @Override
-  public List<AuditEntityDto> getTaskChangesHistory(UUID taskId) {
+  public List<AuditEntityDto> getTaskChangesHistory(@NotNull UUID taskId) {
     List<AuditEntry> entities = auditEntityRepository.findAllByTaskIdOrderByTimestampAsc(taskId);
 
     log.debug("audit entity getTaskChangesHistory operation completed, taskId={}", taskId);

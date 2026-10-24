@@ -1,5 +1,7 @@
 package org.example.taskmanager.taskmanager.service;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.controller.dto.response.UserDto;
 import org.example.taskmanager.taskmanager.domain.entity.User;
@@ -16,11 +18,13 @@ import org.example.taskmanager.taskmanager.repository.WorkspaceMemberRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.UserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.UUID;
 
 @Slf4j
 @Service
+@Validated
 public class UserServiceImpl implements UserService {
   private final WorkspaceMemberRepository workspaceMemberRepository;
   private final DomainEventPublisher domainEventPublisher;
@@ -44,7 +48,11 @@ public class UserServiceImpl implements UserService {
 
   @Transactional
   @Override
-  public UserDto create(String name, String email, String password) {
+  public UserDto create(
+          @NotBlank String name,
+          @NotBlank String email,
+          @NotBlank String password
+  ) {
     log.info("creating user, name={}, email={}", name, email);
 
     if (userRepository.existsByEmail(email)) {
@@ -60,19 +68,47 @@ public class UserServiceImpl implements UserService {
     return userMapper.toDto(user);
   }
 
+  @Transactional
   @Override
-  public UserDto changeName(UUID userId, String newName) {
-    return null;
-  }
+  public UserDto changeName(
+          @NotNull UUID userId,
+          @NotBlank String newName
+  ) {
+    log.info("UserService changeName starts, id={}", userId);
 
-  @Override
-  public UserDto changeEmail(UUID userId, String newEmail) {
-    return null;
+    User user = getUser(userId);
+    user.changeName(newName);
+
+    userRepository.save(user);
+
+    log.debug("UserService changeName completed, id={}", userId);
+    return userMapper.toDto(user);
   }
 
   @Transactional
   @Override
-  public UserDto updatePassword(UUID userId, String oldPassword, String newPassword) {
+  public UserDto changeEmail(
+          @NotNull UUID userId,
+          @NotBlank String newEmail
+  ) {
+    log.info("UserService changeEmail starts, id={}", userId);
+
+    User user = getUser(userId);
+    user.changeEmail(newEmail);
+
+    userRepository.save(user);
+
+    log.debug("UserService changeEmail completed, id={}", userId);
+    return userMapper.toDto(user);
+  }
+
+  @Transactional
+  @Override
+  public UserDto updatePassword(
+          @NotNull UUID userId,
+          @NotBlank String oldPassword,
+          @NotBlank String newPassword
+  ) {
     User user = getUser(userId);
 
     if (!passwordHasher.matches(oldPassword, user.getHashedPassword())) {
@@ -91,7 +127,7 @@ public class UserServiceImpl implements UserService {
 
   @Transactional
   @Override
-  public UserDto activate(UUID userId) {
+  public UserDto activate(@NotNull UUID userId) {
     log.info("user activate starts, userId={}", userId);
     User user = getUser(userId);
 
@@ -106,7 +142,7 @@ public class UserServiceImpl implements UserService {
 
   @Transactional
   @Override
-  public UserDto deactivate(UUID userId) {
+  public UserDto deactivate(@NotNull UUID userId) {
     log.info("user deactivate starts, userId={}", userId);
     User user = getUser(userId);
 
@@ -121,7 +157,7 @@ public class UserServiceImpl implements UserService {
 
   @Transactional
   @Override
-  public UserDto delete(UUID userId) {
+  public UserDto delete(@NotNull UUID userId) {
     log.info("user delete starts, userId={}", userId);
 
     if (workspaceMemberRepository.existsByUserIdAndRole(userId, WorkspaceRole.ADMIN)) {
@@ -137,7 +173,7 @@ public class UserServiceImpl implements UserService {
 
   @Transactional(readOnly = true)
   @Override
-  public UserDto getById(UUID userId) {
+  public UserDto getById(@NotNull UUID userId) {
     log.info("user getById operation starts, userId={}", userId);
     User user = getUser(userId);
 
@@ -147,7 +183,7 @@ public class UserServiceImpl implements UserService {
 
   @Transactional(readOnly = true)
   @Override
-  public UserDto getByEmail(String email) {
+  public UserDto getByEmail(@NotBlank String email) {
     log.info("user getByEmail operation starts, email={}", email);
 
     User user = userRepository

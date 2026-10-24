@@ -1,8 +1,9 @@
 package org.example.taskmanager.taskmanager.service;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.controller.dto.response.WorkspaceMemberDto;
-import org.example.taskmanager.taskmanager.domain.entity.WorkspaceMember;
+import org.example.taskmanager.taskmanager.domain.aggregate.WorkspaceMember;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceMemberState;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceRole;
 import org.example.taskmanager.taskmanager.infrastructure.exception.AlreadyExistsException;
@@ -15,12 +16,14 @@ import org.example.taskmanager.taskmanager.repository.WorkspaceRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceMemberService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 import java.util.UUID;
 
 @Slf4j
 @Service
+@Validated
 public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
   private final WorkspaceMemberRepository workspaceMemberRepository;
   private final WorkspaceMemberMapper workspaceMemberMapper;
@@ -41,7 +44,11 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
 
   @Transactional
   @Override
-  public WorkspaceMemberDto create(UUID workspaceId, UUID userId, WorkspaceRole role) {
+  public WorkspaceMemberDto create(
+          @NotNull UUID workspaceId,
+          @NotNull UUID userId,
+          @NotNull WorkspaceRole role
+  ) {
     log.info("creating workspace member, workspaceId={}, userId={}, role={}", workspaceId, userId, role);
     userAndWorkspaceExists(userId, workspaceId);
 
@@ -60,12 +67,15 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
 
   @Transactional
   @Override
-  public WorkspaceMemberDto setRoleToMember(UUID memberId, WorkspaceRole role) {
+  public WorkspaceMemberDto setRoleToMember(
+          @NotNull UUID memberId,
+          @NotNull WorkspaceRole role
+  ) {
     log.info("workspace member setRoleToMember operation starts, workspaceMemberId={}, role={}", memberId, role);
 
     WorkspaceMember workspaceMember = getMember(memberId);
 
-    workspaceMember.setRole(role);
+    workspaceMember.changeRole(role);
     workspaceMemberRepository.save(workspaceMember);
     log.debug("role to workspaceMember with id={} was set and saved in database", memberId);
 
@@ -75,7 +85,9 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
 
   @Transactional
   @Override
-  public List<WorkspaceMemberDto> getMembersOfWorkspace(UUID workspaceId) {
+  public List<WorkspaceMemberDto> getMembersOfWorkspace(
+          @NotNull UUID workspaceId
+  ) {
     log.info("workspace member getMembersOfWorkspace operation starts, workspaceId={}", workspaceId);
 
     List<WorkspaceMember> members = workspaceMemberRepository.findAllByWorkspaceId(workspaceId);
@@ -86,7 +98,9 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
 
   @Transactional
   @Override
-  public WorkspaceMemberDto delete(UUID workspaceMemberId) {
+  public WorkspaceMemberDto delete(
+          @NotNull UUID workspaceMemberId
+  ) {
     log.info("workspace member delete operation starts, workspaceMemberId={}", workspaceMemberId);
     WorkspaceMember member = getMember(workspaceMemberId);
 
@@ -104,7 +118,9 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
 
   @Transactional
   @Override
-  public List<WorkspaceMemberDto> archiveByUser(UUID userId) {
+  public List<WorkspaceMemberDto> archiveByUser(
+          @NotNull UUID userId
+  ) {
     log.info("workspace member archiveByUser operation starts, userId={}", userId);
     checkUserExists(userId);
 
@@ -123,7 +139,9 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
 
   @Transactional
   @Override
-  public List<WorkspaceMemberDto> unarchiveByUser(UUID userId) {
+  public List<WorkspaceMemberDto> unarchiveByUser(
+          @NotNull UUID userId
+  ) {
     log.info("workspace member unarchiveByUser operation starts, userId={}", userId);
     checkUserExists(userId);
 
@@ -142,7 +160,9 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
 
   @Transactional
   @Override
-  public WorkspaceMemberDto blockByManager(UUID workspaceMemberId) {
+  public WorkspaceMemberDto blockByManager(
+          @NotNull UUID workspaceMemberId
+  ) {
     log.info("workspace member blockByManager operation starts, workspaceMemberId={}", workspaceMemberId);
     WorkspaceMember member = getMember(workspaceMemberId);
 
@@ -155,7 +175,9 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
 
   @Transactional
   @Override
-  public WorkspaceMemberDto unblockByManager(UUID workspaceMemberId) {
+  public WorkspaceMemberDto unblockByManager(
+          @NotNull UUID workspaceMemberId
+  ) {
     log.info("workspace member unblockByManager operation starts, workspaceMemberId={}", workspaceMemberId);
     WorkspaceMember member = getMember(workspaceMemberId);
 

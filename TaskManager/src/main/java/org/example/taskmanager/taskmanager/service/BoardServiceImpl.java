@@ -203,6 +203,7 @@ public class BoardServiceImpl implements BoardService {
           @NotNull UUID memberId
   ) {
     workspaceAccessChecker.check(RootEntityType.BOARD, boardId, memberId);
+
     Board board = getBoard(boardId, "changeColumnName");
     requireBoardActive(board, "changeColumnName");
     BoardColumn boardColumn =  boardColumnRepository
@@ -241,6 +242,7 @@ public class BoardServiceImpl implements BoardService {
           @NotNull UUID memberId
   ) {
     workspaceAccessChecker.check(RootEntityType.BOARD, boardId, memberId);
+
     Board board = getBoard(boardId, "changeColumnPosition");
     requireBoardActive(board, "changeColumnPosition");
 

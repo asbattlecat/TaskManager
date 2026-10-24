@@ -131,12 +131,15 @@ public class ProjectServiceImpl implements ProjectService {
 
   // ========================== архивация/разархивация =====================
 
+  // TODO добавить пагинацию?
   @Transactional(readOnly = true)
   @Override
   public List<BoardDto> getProjectBoards(
           UUID projectId,
           UUID memberId
   ) {
+    workspaceAccessChecker.check(RootEntityType.PROJECT, projectId, memberId);
+
     Project project = getProject(projectId, "getProjectBoards");
     requireProjectActive(project, "getProjectBoards");
 
@@ -153,6 +156,7 @@ public class ProjectServiceImpl implements ProjectService {
           String newName,
           UUID memberId
   ) {
+    workspaceAccessChecker.check(RootEntityType.PROJECT, projectId, memberId);
     Project project = getProject(projectId, "changeName");
 
     // проверка на активность происходит внутри агрегата
@@ -170,6 +174,7 @@ public class ProjectServiceImpl implements ProjectService {
           String newDescription,
           UUID memberId
   ) {
+    workspaceAccessChecker.check(RootEntityType.PROJECT, projectId, memberId);
     Project project = getProject(projectId, "changeDescription");
 
     // проверка на активность происходит внутри агрегата
@@ -187,20 +192,6 @@ public class ProjectServiceImpl implements ProjectService {
             .findById(projectId)
             .orElseThrow(() -> new NotFoundException("Project with id " + projectId
                       + " not found during " + operationName + "operation"));
-  }
-
-  private Workspace getParent(UUID workspaceId,String operationName) {
-    return workspaceRepository
-            .findById(workspaceId)
-            .orElseThrow(() -> new NotFoundException("Workspace as parent of project with id "
-                      + workspaceId + " not found during " + operationName + " operation"));
-  }
-
-  private void checkParentBeforeUnarchive(Workspace parent) {
-    if (parent.getArchiveState() != ArchiveState.ACTIVE) {
-      throw new IllegalStateException("Cannot unarchive project because workspace (parent) with id "
-              + parent.getId() + " is archived");
-    }
   }
 
   private void requireProjectActive(Project project, String operationName) {

@@ -1,14 +1,13 @@
 package org.example.taskmanager.taskmanager.service;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.controller.dto.response.ProjectDto;
 import org.example.taskmanager.taskmanager.controller.dto.response.WorkspaceDto;
 import org.example.taskmanager.taskmanager.domain.aggregate.Project;
 import org.example.taskmanager.taskmanager.domain.aggregate.Workspace;
-import org.example.taskmanager.taskmanager.domain.enums.ArchiveReason;
-import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
-import org.example.taskmanager.taskmanager.domain.enums.UnarchiveReason;
-import org.example.taskmanager.taskmanager.domain.enums.WorkspaceRole;
+import org.example.taskmanager.taskmanager.domain.enums.*;
 import org.example.taskmanager.taskmanager.domain.records.CascadeArchiveResult;
 import org.example.taskmanager.taskmanager.domain.records.CascadeUnarchiveResult;
 import org.example.taskmanager.taskmanager.infrastructure.exception.NotFoundException;
@@ -18,17 +17,21 @@ import org.example.taskmanager.taskmanager.repository.ProjectRepository;
 import org.example.taskmanager.taskmanager.repository.UserRepository;
 import org.example.taskmanager.taskmanager.repository.WorkspaceRepository;
 import org.example.taskmanager.taskmanager.service.interfaces.CascadeArchiveService;
+import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceAccessChecker;
 import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceMemberService;
 import org.example.taskmanager.taskmanager.service.interfaces.WorkspaceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 import java.util.UUID;
 
 @Slf4j
 @Service
+@Validated
 public class WorkspaceServiceImpl implements WorkspaceService {
+  private final WorkspaceAccessChecker workspaceAccessChecker;
   private final WorkspaceMemberService workspaceMemberService;
   private final CascadeArchiveService cascadeArchiveService;
   private final WorkspaceRepository workspaceRepository;
@@ -39,6 +42,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
 
   public WorkspaceServiceImpl(
+          WorkspaceAccessChecker workspaceAccessChecker,
           WorkspaceMemberService workspaceMemberService,
           CascadeArchiveService cascadeArchiveService,
           WorkspaceRepository workspaceRepository,
@@ -47,6 +51,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
           UserRepository userRepository,
           ProjectMapper projectMapper
   ) {
+    this.workspaceAccessChecker = workspaceAccessChecker;
     this.workspaceMemberService = workspaceMemberService;
     this.cascadeArchiveService = cascadeArchiveService;
     this.workspaceRepository = workspaceRepository;
@@ -58,7 +63,11 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
   @Transactional
   @Override
-  public WorkspaceDto create(String name, String description, UUID ownerId) {
+  public WorkspaceDto create(
+          @NotBlank String name,
+          String description,
+          @NotNull UUID ownerId
+  ) {
     log.info("creating workspace, name={}, description={}, ownerId={}", name, description, ownerId);
 
     // Правило агрегата: workspace имеет OWNER. Поэтому создаем owner-а
@@ -81,8 +90,13 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   // TODO валидация пользователя
   @Transactional
   @Override
-  public WorkspaceDto archive(UUID workspaceId, UUID memberId) {
+  public WorkspaceDto archive(
+          @NotNull UUID workspaceId,
+          @NotNull UUID memberId
+  ) {
     log.info("workspace archive starts, workspaceId={}", workspaceId);
+    workspaceAccessChecker.check(RootEntityType.WORKSPACE, workspaceId, memberId);
+
     Workspace workspace = getWorkspace(workspaceId, "archive");
 
     workspace.archive(ArchiveReason.USER_ACTION);
@@ -101,8 +115,13 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   // TODO валидация пользователя
   @Transactional
   @Override
-  public WorkspaceDto unarchive(UUID workspaceId, UUID memberId) {
+  public WorkspaceDto unarchive(
+          @NotNull UUID workspaceId,
+          @NotNull UUID memberId
+  ) {
     log.info("workspace unarchive starts, workspaceId={}", workspaceId);
+    workspaceAccessChecker.check(RootEntityType.WORKSPACE, workspaceId, memberId);
+
     Workspace workspace = getWorkspace(workspaceId, "unarchive");
 
     workspace.unarchive(UnarchiveReason.USER_ACTION);
@@ -120,8 +139,12 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
   @Transactional(readOnly = true)
   @Override
-  public List<ProjectDto> getProjects(UUID workspaceId) {
+  public List<ProjectDto> getProjects(
+          @NotNull UUID workspaceId,
+          @NotNull UUID memberId
+  ) {
     log.info("workspace getProjects operation starts, workspaceId={}", workspaceId);
+    workspaceAccessChecker.check(RootEntityType.WORKSPACE, workspaceId, memberId);
 
     Workspace workspace = getWorkspace(workspaceId, "getProjects");
     isWorkspaceActive(workspace, "getProjects");
@@ -133,13 +156,19 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
   @Transactional
   @Override
-  public WorkspaceDto changeName(UUID workspaceId, String newName) {
+  public WorkspaceDto changeName(
+          @NotNull UUID workspaceId,
+          @NotBlank String newName,
+          @NotNull UUID memberId
+  ) {
     log.info("workspace changeName operation starts, workspaceId={}, newName={}", workspaceId, newName);
+    workspaceAccessChecker.check(RootEntityType.WORKSPACE, workspaceId, memberId);
+
     Workspace workspace = getWorkspace(workspaceId, "changeName");
 
     isWorkspaceActive(workspace, "changeName");
 
-    workspace.setName(newName);
+    workspace.changeName(newName);
     workspaceRepository.save(workspace);
 
     log.debug("workspace changeName operation completed, workspaceId={}, newName={}", workspaceId, newName);
@@ -148,20 +177,28 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
   @Transactional
   @Override
-  public WorkspaceDto changeDescription(UUID workspaceId, String newDescription) {
+  public WorkspaceDto changeDescription(
+          @NotNull UUID workspaceId,
+          String newDescription,
+          @NotNull UUID memberId
+  ) {
     log.info("workspace changeDescription operation starts, workspaceId={}, newDescription={}",
             workspaceId, newDescription);
+    workspaceAccessChecker.check(RootEntityType.WORKSPACE, workspaceId, memberId);
+    
     Workspace workspace = getWorkspace(workspaceId, "changeDescription");
 
     isWorkspaceActive(workspace, "changeDescription");
 
-    workspace.setDescription(newDescription);
+    workspace.changeDescription(newDescription);
     workspaceRepository.save(workspace);
 
     log.debug("workspace changeDescription operation completed, workspaceId={}, newDescription={}",
             workspaceId, newDescription);
     return workspaceMapper.toDto(workspace);
   }
+
+  // ================ helpers ===================
 
   private Workspace getWorkspace(UUID workspaceId, String operationName) {
     return workspaceRepository

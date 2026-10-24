@@ -1,10 +1,9 @@
-package org.example.taskmanager.taskmanager.domain.entity;
+package org.example.taskmanager.taskmanager.domain.aggregate;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceMemberState;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceRole;

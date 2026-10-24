@@ -19,59 +19,92 @@
 ## 2.1. Агрегаты и их границы
 
 ### IdentityAggregate
+
 Корень: User  
 Внутренние сущности: нет  
-Внешние связи: UserId используется всеми другими агрегатами  
-Инварианты:  
-- email уникален
-- пользователь может быть активным/деактивированным
-- пользователь не может быть удалён, если он является OWNER workspace
-- User может быть участником нескольких workspace
+Внешние связи: UserId используется другими агрегатами
+
+Инварианты:
+
+- email уникален.
+- Пользователь может находиться в статусе ACTIVE/DEACTIVATED.
+- Пользователь не может быть деактивирован или удалён, если является OWNER хотя бы одного Workspace.
+- Пользователь может состоять в нескольких Workspace.
 
 ### WorkspaceAggregate
+
 Корень: Workspace  
-Внутренние сущности: WorkspaceMember  
-Внешние связи: только UUID  
+Внутренние сущности: нет  
+Внешние связи: OwnerUserId
+
 Инварианты:
-- Workspace имеет OWNER
-- WorkspaceMember уникален по userId
-- Workspace может быть в статусе ACTIVE/USER_ARCHIVED
-- OWNER не может быть удалён/архивирован без передачи роли
-- WorkspaceMember создаётся только для существующего User
-- WorkspaceMember архивируется при деактивации User
-- Workspace не может быть изменен, если он архивирован
-- WorkspaceMember может быть заблокирован ADMIN/OWNER-ом
+
+- Workspace всегда имеет OWNER.
+- Workspace может находиться в статусе ACTIVE/USER_ARCHIVED.
+- Архивированный Workspace не может быть изменён.
+- Передача владения возможна только существующему участнику Workspace.
+- OWNER не может быть удалён или деактивирован без передачи владения другому пользователю.
+
+### WorkspaceMembershipAggregate
+
+Корень: WorkspaceMember  
+Внутренние сущности: нет
+Внешние связи: WorkspaceId, UserId
+
+Инварианты:
+
+- Для пары (WorkspaceId, UserId) может существовать только один WorkspaceMember.
+- WorkspaceMember может быть создан только для существующего User.
+- WorkspaceMember может быть создан только для существующего Workspace.
+- WorkspaceMember может иметь роль OWNER, ADMIN или MEMBER.
+- WorkspaceMember может быть заблокирован пользователем с ролью ADMIN или OWNER.
+- WorkspaceMember архивируется при деактивации User.
+- WorkspaceMember не может быть изменён, если связанный Workspace архивирован.
 
 ### ProjectAggregate
+
 Корень: Project  
-Внутренние сущности: нет  
+Внутренние сущности: нет
+Внешние связи: WorkspaceId
+
 Инварианты:
-- Project принадлежит Workspace
-- Project не может быть создан без существующего Workspace
-- Project может быть в статусе ACTIVE/USER_ARCHIVED/PARENT_ARCHIVED
-- Project архивируется каскадно при архивации Workspace
-- Project не может быть изменен, если он архивирован
+
+- Project принадлежит Workspace.
+- Project не может быть создан без существующего Workspace.
+- Project может находиться в статусе ACTIVE/USER_ARCHIVED/PARENT_ARCHIVED.
+- Project архивируется при архивации Workspace.
+- Архивированный Project не может быть изменён.
 
 ### BoardAggregate
+
 Корень: Board  
 Внутренние сущности: BoardColumn  
+Внешние связи: ProjectId
+
 Инварианты:
-- Board принадлежит Project
-- Колонки имеют уникальный порядок (sequence)
-- Колонка не может быть удалена, если в ней есть задачи
-- Board архивируется каскадно при архивации Project/Workspace
-- Board не может быть изменен, если он архивирован
+
+- Board принадлежит Project.
+- Колонки имеют уникальный порядок внутри Board.
+- Колонка не может быть удалена, если содержит задачи.
+- Board архивируется при архивации Project или Workspace.
+- Архивированный Board не может быть изменён.
 
 ### TaskAggregate
+
 Корень: Task  
-Внутренние сущности: Comment, Tag, AuditEntry  
+Внутренние сущности: Comment, Tag, AuditEntry
+
+Внешние связи: BoardId, AssigneeUserId
+
 Инварианты:
-- Task принадлежит Board → Project → Workspace
-- Статус валиден согласно workflow
-- Исполнитель должен быть членом Workspace
-- AuditEntry создаётся при каждом изменении значимых полей
-- Task архивируется каскадно при архивации Board/Project/Workspace
-- Task не может быть изменен, если он архивирован
+
+- Task принадлежит Board.
+- Статус Task должен соответствовать workflow.
+- Исполнитель должен являться активным участником Workspace.
+- AuditEntry создаётся при изменении значимых полей задачи.
+- Task архивируется при архивации Board, Project или Workspace.
+- Архивированная Task не может быть изменена.
+- Что мне особенно нравится в таком варианте
 
 ---
 
@@ -270,3 +303,106 @@ IN_PROGRESS → BLOCKED → IN_PROGRESS
 - Проектирование API
 
 ---
+
+
+IdentityAggregate
+
+Корень: User
+
+Внутренние сущности: нет
+
+Внешние связи: UserId используется другими агрегатами
+
+Инварианты:
+
+email уникален.
+Пользователь может находиться в статусе ACTIVE/DEACTIVATED.
+Пользователь не может быть деактивирован или удалён, если является OWNER хотя бы одного Workspace.
+Пользователь может состоять в нескольких Workspace.
+WorkspaceAggregate
+
+Корень: Workspace
+
+Внутренние сущности: нет
+
+Внешние связи: OwnerUserId
+
+Инварианты:
+
+Workspace всегда имеет OWNER.
+Workspace может находиться в статусе ACTIVE/USER_ARCHIVED.
+Архивированный Workspace не может быть изменён.
+Передача владения возможна только существующему участнику Workspace.
+OWNER не может быть удалён или деактивирован без передачи владения другому пользователю.
+WorkspaceMembershipAggregate
+
+Корень: WorkspaceMember
+
+Внутренние сущности: нет
+
+Внешние связи: WorkspaceId, UserId
+
+Инварианты:
+
+Для пары (WorkspaceId, UserId) может существовать только один WorkspaceMember.
+WorkspaceMember может быть создан только для существующего User.
+WorkspaceMember может быть создан только для существующего Workspace.
+WorkspaceMember может иметь роль OWNER, ADMIN или MEMBER.
+WorkspaceMember может быть заблокирован пользователем с ролью ADMIN или OWNER.
+WorkspaceMember архивируется при деактивации User.
+WorkspaceMember не может быть изменён, если связанный Workspace архивирован.
+ProjectAggregate
+
+Корень: Project
+
+Внутренние сущности: нет
+
+Внешние связи: WorkspaceId
+
+Инварианты:
+
+Project принадлежит Workspace.
+Project не может быть создан без существующего Workspace.
+Project может находиться в статусе ACTIVE/USER_ARCHIVED/PARENT_ARCHIVED.
+Project архивируется при архивации Workspace.
+Архивированный Project не может быть изменён.
+BoardAggregate
+
+Корень: Board
+
+Внутренние сущности: BoardColumn
+
+Внешние связи: ProjectId
+
+Инварианты:
+
+Board принадлежит Project.
+Колонки имеют уникальный порядок внутри Board.
+Колонка не может быть удалена, если содержит задачи.
+Board архивируется при архивации Project или Workspace.
+Архивированный Board не может быть изменён.
+TaskAggregate
+
+Корень: Task
+
+Внутренние сущности:
+
+Comment
+Tag
+AuditEntry
+
+Внешние связи:
+
+BoardId
+AssigneeUserId
+
+Инварианты:
+
+Task принадлежит Board.
+Статус Task должен соответствовать workflow.
+Исполнитель должен являться активным участником Workspace.
+AuditEntry создаётся при изменении значимых полей задачи.
+Task архивируется при архивации Board, Project или Workspace.
+Архивированная Task не может быть изменена.
+Что мне особенно нравится в таком варианте
+

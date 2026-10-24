@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.taskmanager.taskmanager.domain.aggregate.Board;
 import org.example.taskmanager.taskmanager.domain.aggregate.Project;
 import org.example.taskmanager.taskmanager.domain.aggregate.Workspace;
-import org.example.taskmanager.taskmanager.domain.entity.WorkspaceMember;
+import org.example.taskmanager.taskmanager.domain.aggregate.WorkspaceMember;
 import org.example.taskmanager.taskmanager.domain.enums.ArchiveState;
 import org.example.taskmanager.taskmanager.domain.enums.RootEntityType;
 import org.example.taskmanager.taskmanager.domain.enums.WorkspaceMemberState;
