@@ -137,6 +137,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     return workspaceMapper.toDto(workspace);
   }
 
+  // TODO пагинация?
   @Transactional(readOnly = true)
   @Override
   public List<ProjectDto> getProjects(
@@ -148,6 +149,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
     Workspace workspace = getWorkspace(workspaceId, "getProjects");
     isWorkspaceActive(workspace, "getProjects");
+    
     List<Project> projects = projectRepository.findAllByWorkspaceId(workspaceId);
 
     log.debug("workspace getProjects operation completed, workspaceId={}", workspaceId);
@@ -166,8 +168,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
     Workspace workspace = getWorkspace(workspaceId, "changeName");
 
-    isWorkspaceActive(workspace, "changeName");
-
     workspace.changeName(newName);
     workspaceRepository.save(workspace);
 
@@ -185,10 +185,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     log.info("workspace changeDescription operation starts, workspaceId={}, newDescription={}",
             workspaceId, newDescription);
     workspaceAccessChecker.check(RootEntityType.WORKSPACE, workspaceId, memberId);
-    
-    Workspace workspace = getWorkspace(workspaceId, "changeDescription");
 
-    isWorkspaceActive(workspace, "changeDescription");
+    Workspace workspace = getWorkspace(workspaceId, "changeDescription");
 
     workspace.changeDescription(newDescription);
     workspaceRepository.save(workspace);
